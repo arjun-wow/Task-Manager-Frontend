@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
-import { User, Lock, ArrowRight } from 'lucide-react';
+import { User, Lock, ArrowRight, CheckCircle, Loader, XCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // --- SVG Icons for Social Buttons ---
 const GoogleIcon = () => (
@@ -19,36 +20,180 @@ const GitHubIcon = () => (
   </svg>
 );
 
+// Success Animation Component
+const SuccessAnimation = () => (
+  <motion.div
+    key="success"
+    initial={{ opacity: 0, scale: 0.8 }}
+    animate={{ opacity: 1, scale: 1 }}
+    exit={{ opacity: 0, scale: 1.2 }}
+    className="text-center py-8"
+  >
+    <motion.div
+      initial={{ scale: 0, rotate: -180 }}
+      animate={{ scale: 1, rotate: 0 }}
+      transition={{ 
+        type: "spring",
+        stiffness: 200,
+        damping: 15,
+        delay: 0.2
+      }}
+      className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6 backdrop-blur-sm"
+    >
+      <CheckCircle className="text-white" size={40} />
+    </motion.div>
+    
+    <motion.h3
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.4 }}
+      className="text-2xl font-semibold text-white mb-2"
+    >
+      Welcome back!
+    </motion.h3>
+    
+    <motion.p
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.6 }}
+      className="text-white/80"
+    >
+      Redirecting to your dashboard...
+    </motion.p>
+
+    {/* Loading dots */}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 0.8 }}
+      className="flex justify-center gap-1 mt-6"
+    >
+      {[0, 1, 2].map((index) => (
+        <motion.div
+          key={index}
+          className="w-2 h-2 bg-white rounded-full"
+          animate={{
+            scale: [1, 1.5, 1],
+            opacity: [0.5, 1, 0.5],
+          }}
+          transition={{
+            duration: 1.5,
+            repeat: Infinity,
+            delay: index * 0.2,
+          }}
+        />
+      ))}
+    </motion.div>
+  </motion.div>
+);
+
+// Error Animation Component
+const ErrorAnimation = ({ error, onRetry }) => (
+  <motion.div
+    key="error"
+    initial={{ opacity: 0, scale: 0.8 }}
+    animate={{ opacity: 1, scale: 1 }}
+    exit={{ opacity: 0, scale: 1.2 }}
+    className="text-center py-8"
+  >
+    <motion.div
+      initial={{ scale: 0, rotate: 180 }}
+      animate={{ scale: 1, rotate: 0 }}
+      transition={{ 
+        type: "spring",
+        stiffness: 200,
+        damping: 15 
+      }}
+      className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6 backdrop-blur-sm"
+    >
+      <XCircle className="text-white" size={40} />
+    </motion.div>
+    
+    <motion.h3
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.2 }}
+      className="text-2xl font-semibold text-white mb-2"
+    >
+      Login Failed
+    </motion.h3>
+    
+    <motion.p
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.4 }}
+      className="text-white/80 mb-6"
+    >
+      {error || 'Invalid email or password. Please try again.'}
+    </motion.p>
+
+    <motion.button
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 0.6 }}
+      onClick={onRetry}
+      className="px-8 py-3 bg-white/20 hover:bg-white/30 text-white rounded-xl font-medium transition-all duration-300 border border-white/30 backdrop-blur-sm"
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+    >
+      Try Again
+    </motion.button>
+  </motion.div>
+);
+
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLogin, setIsLogin] = useState(true);
   const [name, setName] = useState('');
   const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loginStatus, setLoginStatus] = useState(null); // 'success', 'error'
+  
   const { login, register } = useAuthStore();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    setIsLoading(true);
+    setLoginStatus(null);
+
     try {
       if (isLogin) {
         if (!email || !password) {
           setError('Please enter both email and password.');
+          setIsLoading(false);
           return;
         }
         await login(email, password);
       } else {
         if (!name || !email || !password) {
           setError('Please fill out all fields.');
+          setIsLoading(false);
           return;
         }
         await register(name, email, password);
       }
-      navigate('/');
+      
+      // Success animation
+      setLoginStatus('success');
+      
+      // Redirect after animation
+      setTimeout(() => {
+        navigate('/');
+      }, 2000);
+      
     } catch (err) {
       setError(err.response?.data?.message || 'Invalid credentials');
+      setLoginStatus('error');
+      setIsLoading(false);
     }
+  };
+
+  const handleRetry = () => {
+    setLoginStatus(null);
+    setError(null);
   };
 
   return (
@@ -211,118 +356,162 @@ export default function Login() {
           <h1 className="text-2xl font-bold text-white">
             WeManage
           </h1>
-          <p className="text-sm text-white/80">
-            {isLogin ? "Don't have an account?" : "Already have an account?"}
-            <button
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setError(null);
-              }}
-              className="font-semibold text-white ml-2 hover:underline inline-flex items-center transition-all duration-300"
-            >
-              {isLogin ? "Sign up" : "Log In"}
-              <ArrowRight size={16} className="ml-1" />
-            </button>
-          </p>
+          <AnimatePresence mode="wait">
+            {!loginStatus && (
+              <motion.p
+                key="switch-text"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="text-sm text-white/80"
+              >
+                {isLogin ? "Don't have an account?" : "Already have an account?"}
+                <button
+                  onClick={() => {
+                    setIsLogin(!isLogin);
+                    setError(null);
+                  }}
+                  className="font-semibold text-white ml-2 hover:underline inline-flex items-center transition-all duration-300"
+                >
+                  {isLogin ? "Sign up" : "Log In"}
+                  <ArrowRight size={16} className="ml-1" />
+                </button>
+              </motion.p>
+            )}
+          </AnimatePresence>
         </header>
 
         {/* Form Container */}
         <main className="flex-grow flex items-center justify-center relative z-10">
           <div className="w-full max-w-md glass-form rounded-2xl p-8 backdrop-blur-xl">
-            <h2 className="text-2xl font-semibold text-center mb-2 text-white">
-              {isLogin ? "Log in to your account" : "Create your account"}
-            </h2>
-            
-            {error && (
-              <p className="text-red-300 text-sm text-center my-4 bg-red-500/10 py-2 rounded-lg">{error}</p>
-            )}
-
-            {/* Social Logins */}
-            {isLogin && (
-              <div className="space-y-3 my-6">
-                <button
-                  type="button"
-                  className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-semibold text-sm bg-white/10 text-white hover:bg-white/20 transition-all duration-300 border border-white/20"
+            <AnimatePresence mode="wait">
+              {loginStatus === 'success' ? (
+                <SuccessAnimation />
+              ) : loginStatus === 'error' ? (
+                <ErrorAnimation error={error} onRetry={handleRetry} />
+              ) : (
+                <motion.div
+                  key="login-form"
+                  initial={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
                 >
-                  <GoogleIcon />
-                  LOG IN WITH GOOGLE
-                </button>
-                <button
-                  type="button"
-                  className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-semibold text-sm bg-white/10 text-white hover:bg-white/20 transition-all duration-300 border border-white/20"
-                >
-                  <GitHubIcon />
-                  LOG IN WITH GITHUB
-                </button>
-              </div>
-            )}
+                  <h2 className="text-2xl font-semibold text-center mb-2 text-white">
+                    {isLogin ? "Log in to your account" : "Create your account"}
+                  </h2>
+                  
+                  {error && (
+                    <motion.p 
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-red-300 text-sm text-center my-4 bg-red-500/10 py-2 rounded-lg"
+                    >
+                      {error}
+                    </motion.p>
+                  )}
 
-            {/* "or" separator */}
-            {isLogin && (
-              <div className="flex items-center my-6">
-                <hr className="flex-grow border-white/20" />
-                <span className="mx-4 text-sm text-white/60">or</span>
-                <hr className="flex-grow border-white/20" />
-              </div>
-            )}
-            
-            {/* Main Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Name Field */}
-              {!isLogin && (
-                <div className="relative">
-                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/60" size={18} />
-                  <input
-                    type="text"
-                    placeholder="Your Name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full pl-10 pr-3 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 text-white placeholder-white/60 transition-all duration-300"
-                  />
-                </div>
+                  {/* Social Logins */}
+                  {isLogin && (
+                    <div className="space-y-3 my-6">
+                      <button
+                        type="button"
+                        className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-semibold text-sm bg-white/10 text-white hover:bg-white/20 transition-all duration-300 border border-white/20"
+                      >
+                        <GoogleIcon />
+                        LOG IN WITH GOOGLE
+                      </button>
+                      <button
+                        type="button"
+                        className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-semibold text-sm bg-white/10 text-white hover:bg-white/20 transition-all duration-300 border border-white/20"
+                      >
+                        <GitHubIcon />
+                        LOG IN WITH GITHUB
+                      </button>
+                    </div>
+                  )}
+
+                  {/* "or" separator */}
+                  {isLogin && (
+                    <div className="flex items-center my-6">
+                      <hr className="flex-grow border-white/20" />
+                      <span className="mx-4 text-sm text-white/60">or</span>
+                      <hr className="flex-grow border-white/20" />
+                    </div>
+                  )}
+                  
+                  {/* Main Form */}
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Name Field */}
+                    {!isLogin && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="relative overflow-hidden"
+                      >
+                        <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/60" size={18} />
+                        <input
+                          type="text"
+                          placeholder="Your Name"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          className="w-full pl-10 pr-3 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 text-white placeholder-white/60 transition-all duration-300"
+                        />
+                      </motion.div>
+                    )}
+                    
+                    {/* Email Field */}
+                    <div className="relative">
+                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/60" size={18} />
+                      <input
+                        type="email"
+                        placeholder="account@refero.design"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full pl-10 pr-3 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 text-white placeholder-white/60 transition-all duration-300"
+                      />
+                    </div>
+
+                    {/* Password Field */}
+                    <div className="relative">
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/60" size={18} />
+                      <input
+                        type="password"
+                        placeholder="••••••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full pl-10 pr-3 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 text-white placeholder-white/60 transition-all duration-300"
+                      />
+                    </div>
+
+                    {/* Forgot Password */}
+                    {isLogin && (
+                      <div className="text-right">
+                        <a href="#" className="text-sm font-medium text-white/80 hover:text-white transition-colors duration-300">
+                          Don't remember your password?
+                        </a>
+                      </div>
+                    )}
+                    
+                    {/* Submit Button */}
+                    <motion.button
+                      type="submit"
+                      disabled={isLoading}
+                      whileHover={{ scale: isLoading ? 1 : 1.05 }}
+                      whileTap={{ scale: isLoading ? 1 : 0.95 }}
+                      className="w-full bg-white text-purple-600 py-3 rounded-xl font-semibold hover:bg-white/90 transition-all duration-300 shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader size={20} className="animate-spin" />
+                          {isLogin ? "Logging In..." : "Creating Account..."}
+                        </>
+                      ) : (
+                        isLogin ? "Log In" : "Sign Up"
+                      )}
+                    </motion.button>
+                  </form>
+                </motion.div>
               )}
-              
-              {/* Email Field */}
-              <div className="relative">
-                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/60" size={18} />
-                <input
-                  type="email"
-                  placeholder="account@refero.design"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-3 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 text-white placeholder-white/60 transition-all duration-300"
-                />
-              </div>
-
-              {/* Password Field */}
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/60" size={18} />
-                <input
-                  type="password"
-                  placeholder="••••••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-3 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 text-white placeholder-white/60 transition-all duration-300"
-                />
-              </div>
-
-              {/* Forgot Password */}
-              {isLogin && (
-                <div className="text-right">
-                  <a href="#" className="text-sm font-medium text-white/80 hover:text-white transition-colors duration-300">
-                    Don't remember your password?
-                  </a>
-                </div>
-              )}
-              
-              {/* Submit Button */}
-              <button
-                type="submit"
-                className="w-full bg-white text-purple-600 py-3 rounded-xl font-semibold hover:bg-white/90 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg"
-              >
-                {isLogin ? "Log In" : "Sign Up"}
-              </button>
-            </form>
+            </AnimatePresence>
           </div>
         </main>
 
@@ -332,7 +521,6 @@ export default function Login() {
           <div className="wave wave2"></div>
           <div className="wave wave3"></div>
         </div>
-
       </div>
     </>
   );
