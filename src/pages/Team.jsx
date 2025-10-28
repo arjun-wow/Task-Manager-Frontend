@@ -1,50 +1,53 @@
 import { useEffect } from "react";
-import useTaskStore from "../store/taskStore";
-
-const members = [
-  { id: 1, name: "Arjun", role: "Frontend Developer", avatar: "https://i.pravatar.cc/150?img=1" },
-  { id: 2, name: "Diya", role: "Backend Developer", avatar: "https://i.pravatar.cc/150?img=2" },
-  { id: 3, name: "Raj", role: "UI/UX Designer", avatar: "https://i.pravatar.cc/150?img=3" },
-  { id: 4, name: "Karan", role: "DevOps Engineer", avatar: "https://i.pravatar.cc/150?img=4" },
-];
+import useTeamStore from "../store/teamStore"; // Import the store for fetching team members
+import DashboardCard from '../components/dashboard/DashboardCard'; // Import the glass card wrapper
 
 export default function Team() {
-  const { tasks, fetchTasks } = useTaskStore();
+  // Use the team store instead of task store
+  const { team, fetchTeam, loading } = useTeamStore(); 
 
   useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
+    // Fetch the actual team members from the backend
+    fetchTeam(); 
+  }, [fetchTeam]);
 
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold text-primary mb-6">Team Members</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {members.map((m) => (
-          <div
-            key={m.id}
-            className="bg-white rounded-2xl shadow-md hover:shadow-lg transition p-6 flex flex-col items-center border border-gray-100"
-          >
-            <img
-              src={m.avatar}
-              alt={m.name}
-              className="w-20 h-20 rounded-full border-4 border-blue-100 mb-3"
-            />
-            <h2 className="font-semibold text-lg text-gray-800">{m.name}</h2>
-            <p className="text-sm text-gray-500">{m.role}</p>
-            <div className="mt-4 w-full">
-              <p className="text-xs text-gray-500 mb-1">Task Progress</p>
-              <div className="w-full bg-gray-200 h-2 rounded-full">
-                <div
-                  className="h-2 bg-primary rounded-full"
-                  style={{
-                    width: `${Math.floor(Math.random() * 100)}%`,
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        ))}
+    <div className="space-y-6">
+      {/* Header Section - Consistent Style */}
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight text-white dark:text-white drop-shadow-lg">
+          Team Directory
+        </h1>
+        <p className="mt-1 text-base text-white-600 dark:text-gray-300">
+          All registered users in the workspace
+        </p>
       </div>
+      
+      {/* Grid for Team Members */}
+      {loading ? (
+        <p className="text-gray-400 dark:text-gray-500">Loading team members...</p>
+      ) : team.length === 0 ? (
+         <p className="text-gray-400 dark:text-gray-500">No team members found.</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {/* Map over the fetched team members */}
+          {team.map((/** @type {any} */ member) => ( 
+            // Wrap each member in a DashboardCard for glass effect
+            <DashboardCard key={member.id} className="p-6 flex flex-col items-center text-center">
+              <img
+                src={member.avatarUrl || `https://i.pravatar.cc/150?u=${member.id}`} // Use avatarUrl from fetched data
+                alt={member.name || 'User'}
+                className="w-20 h-20 rounded-full border-4 border-white/20 dark:border-gray-700 mb-4 shadow-md" // Adjusted border
+              />
+              <h2 className="font-semibold text-lg text-black dark:text-white">{member.name || 'Unnamed User'}</h2>
+              {/* Optional: Add Role later to User model and display here */}
+              <p className="text-sm text-gray-600 dark:text-gray-400">{member.role || 'Member'}</p> 
+              {/* Removed the Task Progress bar */}
+            </DashboardCard>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
+

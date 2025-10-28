@@ -1,19 +1,24 @@
 import { create } from 'zustand';
-import api from './api'; // Use our authenticated api instance
+import api from './api';
 
 const useTaskStore = create((set, get) => ({
   tasks: [],
   loading: false,
+  error: null,
 
   fetchTasks: async (projectId) => {
-    if (!projectId) return set({ tasks: [] });
-    set({ loading: true });
+    if (!projectId) {
+      set({ tasks: [], loading: false });
+      return;
+    }
+
+    set({ loading: true, error: null });
     try {
       const res = await api.get(`/api/tasks?projectId=${projectId}`);
       set({ tasks: res.data, loading: false });
     } catch (err) {
       console.error("Fetch tasks error", err.message);
-      set({ loading: false });
+      set({ error: err.message, loading: false, tasks: [] });
     }
   },
 
@@ -21,8 +26,10 @@ const useTaskStore = create((set, get) => ({
     try {
       const res = await api.post('/api/tasks', payload);
       set((s) => ({ tasks: [res.data, ...s.tasks] }));
+      return res.data;
     } catch (err) {
       console.error("Add task error", err.message);
+      throw err;
     }
   },
 
@@ -30,9 +37,43 @@ const useTaskStore = create((set, get) => ({
     try {
       const res = await api.put(`/api/tasks/${id}`, payload);
       set((s) => ({ tasks: s.tasks.map(t => t.id === id ? res.data : t) }));
-      return res.data; // Return updated task
+      return res.data;
     } catch (err) {
       console.error("Update task error", err.message);
+      throw err;
+    }
+  },
+
+  updateTaskStatus: async (taskId, newStatus) => {
+    const task = get().tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    // Optimistic update
+    set((s) => ({
+      tasks: s.tasks.map(t =>
+        t.id === taskId ? { ...t, status: newStatus } : t
+      ),
+    }));
+
+    try {
+      const updatedTask = await get().updateTask(taskId, { status: newStatus });
+      // Sync with server response
+      set((s) => ({ 
+        tasks: s.tasks.map(t => 
+          t.id === taskId 
+            ? { ...updatedTask, assignee: updatedTask.assignee || task.assignee }
+            : t
+        ) 
+      }));
+    } catch (err) {
+      // Revert on error
+      set((s) => ({
+        tasks: s.tasks.map(t =>
+          t.id === taskId ? task : t
+        ),
+      }));
+      console.error("Update task status error", err);
+      throw err;
     }
   },
 
@@ -42,25 +83,9 @@ const useTaskStore = create((set, get) => ({
       set((s) => ({ tasks: s.tasks.filter(t => t.id !== id) }));
     } catch (err) {
       console.error("Delete task error", err.message);
+      throw err;
     }
   },
-
-  // Helper to update status (for Kanban)
-  updateTaskStatus: async (taskId, newStatus) => {
-    const task = get().tasks.find(t => t.id === taskId);
-    if (!task) return;
-
-    const updatedTask = await get().updateTask(taskId, { status: newStatus });
-    
-    // Manually update state to reflect nested assignee data
-    set((s) => ({ 
-      tasks: s.tasks.map(t => 
-        t.id === taskId 
-          ? { ...updatedTask, assignee: task.assignee } // Preserve assignee details from frontend state
-          : t
-      ) 
-    }));
-  }
 }));
 
 export default useTaskStore;

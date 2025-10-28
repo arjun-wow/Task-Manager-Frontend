@@ -1,24 +1,25 @@
 import useTaskStore from '../store/taskStore';
 import useProjectStore from '../store/projectStore';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { isToday, isTomorrow, isThisWeek } from 'date-fns';
-import { Calendar, Clock, Flag, User, CheckCircle, PlayCircle, Circle } from 'lucide-react';
+import { Calendar, Clock, Flag, User, CheckCircle, PlayCircle, Circle, Loader } from 'lucide-react';
+import AddTaskButton from '../components/AddTaskButton';
+import { motion, AnimatePresence } from 'framer-motion';
 
-// Cleaner priority colors with better contrast
+// Priority colors
 const priorityColors = {
   HIGH: 'bg-red-500/10 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800',
   MEDIUM: 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800',
   LOW: 'bg-green-500/10 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800'
 };
 
-// Cleaner status colors
+// Status colors and icons
 const statusColors = {
   TO_DO: 'bg-gray-500/10 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700',
   IN_PROGRESS: 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800',
   DONE: 'bg-green-500/10 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800'
 };
 
-// Status icons
 const statusIcons = {
   TO_DO: <Circle size={14} className="inline mr-1" />,
   IN_PROGRESS: <PlayCircle size={14} className="inline mr-1" />,
@@ -26,16 +27,26 @@ const statusIcons = {
 };
 
 export default function MyTasks() {
-  const { tasks, fetchTasks } = useTaskStore();
+  const { tasks, fetchTasks, loading } = useTaskStore();
   const { currentProject } = useProjectStore();
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => { 
-    if (currentProject) {
-      fetchTasks(currentProject.id); 
-    }
+    const loadTasks = async () => {
+      if (currentProject) {
+        await fetchTasks(currentProject.id);
+        setIsInitialLoad(false);
+      }
+    };
+    
+    loadTasks();
   }, [currentProject, fetchTasks]);
 
   const groupedTasks = useMemo(() => {
+    if (loading || isInitialLoad) {
+      return { today: [], tomorrow: [], thisWeek: [], upcoming: [] };
+    }
+
     const today = [];
     const tomorrow = [];
     const thisWeek = [];
@@ -61,7 +72,10 @@ export default function MyTasks() {
         if (priorityOrder[b.priority] !== priorityOrder[a.priority]) {
           return priorityOrder[b.priority] - priorityOrder[a.priority];
         }
-        return new Date(a.dueDate) - new Date(b.dueDate);
+        if (a.dueDate && b.dueDate) {
+          return new Date(a.dueDate) - new Date(b.dueDate);
+        }
+        return 0;
       });
 
     return {
@@ -70,10 +84,16 @@ export default function MyTasks() {
       thisWeek: sortTasks(thisWeek),
       upcoming: sortTasks(upcoming)
     };
-  }, [tasks]);
+  }, [tasks, loading, isInitialLoad]);
 
   const TaskCard = ({ task }) => (
-    <div className="group p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600">
+    <motion.div 
+      layout
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      className="group p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600"
+    >
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-gray-900 dark:text-white text-sm line-clamp-2 group-hover:text-primary transition-colors">
@@ -129,7 +149,7 @@ export default function MyTasks() {
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 
   const TaskSection = ({ title, tasks, icon, emptyMessage, color = 'gray' }) => {
@@ -150,7 +170,13 @@ export default function MyTasks() {
     };
 
     return (
-      <div className={`rounded-xl border-2 ${colorClasses[color]} transition-colors duration-200`}>
+      <motion.div 
+        layout
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className={`rounded-xl border-2 ${colorClasses[color]} transition-colors duration-200`}
+      >
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
             <div className={`p-2 rounded-lg bg-white dark:bg-gray-800 shadow-sm ${iconColors[color]}`}>
@@ -166,55 +192,109 @@ export default function MyTasks() {
         </div>
         
         <div className="p-4">
-          {tasks.length > 0 ? (
-            <div className="space-y-3">
-              {tasks.map(task => (
-                <TaskCard key={task.id} task={task} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <div className="text-gray-400 dark:text-gray-500 mb-3">
-                <Clock size={32} className="mx-auto mb-2 opacity-50" />
+          <AnimatePresence mode="popLayout">
+            {tasks.length > 0 ? (
+              <div className="space-y-3">
+                {tasks.map((task, index) => (
+                  <motion.div
+                    key={task.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <TaskCard task={task} />
+                  </motion.div>
+                ))}
               </div>
-              <p className="text-gray-500 dark:text-gray-400 text-sm">{emptyMessage}</p>
-            </div>
-          )}
+            ) : (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="text-center py-8"
+              >
+                <div className="text-gray-400 dark:text-gray-500 mb-3">
+                  <Clock size={32} className="mx-auto mb-2 opacity-50" />
+                </div>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">{emptyMessage}</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-      </div>
+      </motion.div>
     );
   };
 
+  // Loading state
+  if (isInitialLoad || loading) {
+    return (
+      <div className="space-y-8">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+          <h1
+  className="text-3xl font-bold tracking-tight text-white drop-shadow-lg" 
+>
+  My Tasks
+</h1>
+<p className="mt-2 text-base text-gray-200 bg-gradient-to-r from-purple-900/50 to-purple-700/50 py-2 px-4 rounded-xl shadow-sm">
+  {}
+  <span className="text-white"> {}
+    Overview of all your assigned tasks across projects
+  </span>
+</p>
+
+          </div>
+          <AddTaskButton variant="default" />
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          {[1, 2, 3, 4].map((item) => (
+            <div key={item} className="bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-4">
+              <div className="animate-pulse">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-gray-300 dark:bg-gray-600 rounded-lg"></div>
+                  <div>
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 mb-2"></div>
+                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  {[1, 2, 3].map((task) => (
+                    <div key={task} className="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                      <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded mb-2"></div>
+                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
-  {/* Header */}
-  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 bg-gradient-to-r from-white/50 to-gray-50/50 dark:from-gray-800/50 dark:to-gray-900/50 rounded-xl border border-gray-200/50 dark:border-gray-700/50">
-    <div className="flex items-center gap-4">
-      <div className="p-2 bg-primary/10 rounded-lg">
-        <User size={20} className="text-primary" />
-      </div>
-      <div>
-        <h1 className="text-xl font-semibold text-gray-800 dark:text-white">My Tasks</h1>
-        <p className="text-gray-500 dark:text-gray-400 text-sm">
-          Personal task dashboard
-        </p>
-      </div>
-    </div>
-        
-        <div className="flex items-center gap-4 text-sm flex-wrap">
-          <div className="flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700">
-            <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-            <span className="text-gray-700 dark:text-gray-300">Today</span>
-          </div>
-          <div className="flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700">
-            <div className="w-3 h-3 rounded-full bg-green-500"></div>
-            <span className="text-gray-700 dark:text-gray-300">Tomorrow</span>
-          </div>
-          <div className="flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700">
-            <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-            <span className="text-gray-700 dark:text-gray-300">This Week</span>
-          </div>
+      {/* Header with Add Task button */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+          <h1
+  className="text-3xl font-bold tracking-tight text-white drop-shadow-lg" 
+>
+  My Tasks
+</h1>
+<p className="mt-2 text-base text-gray-200 bg-gradient-to-r from-purple-900/50 to-purple-700/50 py-2 px-4 rounded-xl shadow-sm">
+  {}
+  <span className="text-white"> {}
+    Overview of all your assigned tasks across projects
+  </span>
+</p>
+
         </div>
+        <AddTaskButton variant="default" />
       </div>
 
       {/* Task Sections Grid */}
@@ -282,6 +362,9 @@ export default function MyTasks() {
           <div className="text-sm text-gray-600 dark:text-gray-400">Total Tasks</div>
         </div>
       </div>
+
+      {/* Floating Add Task Button */}
+      <AddTaskButton variant="floating" />
     </div>
   );
 }
