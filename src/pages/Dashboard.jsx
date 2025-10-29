@@ -38,14 +38,12 @@ export default function Dashboard() {
           <ProjectDirectory />
         </div>
 
-        {/* Right Column (Span 1) */}
         <div className="lg:col-span-1 space-y-6">
           <NewComments />
           <TeamDirectory />
         </div>
       </div>
 
-      {/* Floating Add Task Button for mobile */}
       <AddTaskButton variant="floating" />
     </div>
   );

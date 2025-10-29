@@ -1,29 +1,28 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../store/api';
-import { Lock, Loader, CheckCircle, XCircle } from 'lucide-react'; // Added icons
-import { motion, AnimatePresence } from 'framer-motion';      // Added animation
+import { Lock, Loader, CheckCircle, XCircle } from 'lucide-react'; 
+import { motion, AnimatePresence } from 'framer-motion';      
 
 export default function ResetPasswordPage() {
-  const { token } = useParams(); // Get token from URL
+  const { token } = useParams(); 
   const navigate = useNavigate();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isValidToken, setIsValidToken] = useState(true); // Assume valid initially
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle'); // For animation state
+  const [isValidToken, setIsValidToken] = useState(true); 
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle'); 
 
 
-  // Optional: Verify token on load - keep commented unless endpoint exists
-  // useEffect(() => { ... });
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
     setError('');
-    setStatus('idle'); // Reset status
+    setStatus('idle'); 
 
     if (password !== confirmPassword) {
       setError('Passwords do not match.');
@@ -37,7 +36,7 @@ export default function ResetPasswordPage() {
     }
     if (!token) {
         setError('Invalid or missing reset token.');
-        setIsValidToken(false); // Mark token as invalid
+        setIsValidToken(false); 
         setStatus('error');
         return;
     }
@@ -48,17 +47,16 @@ export default function ResetPasswordPage() {
       const response = await api.put(`/api/auth/reset-password/${token}`, { password });
       setMessage(response.data.message || 'Password reset successfully!');
       setStatus('success');
-      // Redirect after animation finishes
+      
       setTimeout(() => navigate('/login'), 3000);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to reset password. The link may have expired or is invalid.');
-       // If the error indicates invalid token specifically, update state
        if (err.response?.status === 400 && err.response?.data?.message.includes('invalid or has expired')) {
             setIsValidToken(false);
        }
        setStatus('error');
     } finally {
-      setLoading(false); // Keep loading false, status handles UI
+      setLoading(false); 
     }
   };
 
@@ -71,7 +69,7 @@ export default function ResetPasswordPage() {
 
   return (
     <>
-      {/* Reusing login page styles - Ensure these are defined globally or copied */}
+      {/* Reusing login */}
       <style>{`
         .login-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); position: relative; overflow: hidden; min-height: 100vh; }
         .dark .login-bg { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #3730a3 100%); }

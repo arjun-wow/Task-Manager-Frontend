@@ -1,19 +1,16 @@
 import { useEffect } from "react";
-import useTeamStore from "../store/teamStore"; // Import the store for fetching team members
-import DashboardCard from '../components/dashboard/DashboardCard'; // Import the glass card wrapper
+import useTeamStore from "../store/teamStore"; 
+import DashboardCard from '../components/dashboard/DashboardCard';
 
 export default function Team() {
-  // Use the team store instead of task store
   const { team, fetchTeam, loading } = useTeamStore(); 
 
   useEffect(() => {
-    // Fetch the actual team members from the backend
     fetchTeam(); 
   }, [fetchTeam]);
 
   return (
     <div className="space-y-6">
-      {/* Header Section - Consistent Style */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-white dark:text-white drop-shadow-lg">
           Team Directory
@@ -32,12 +29,11 @@ export default function Team() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {/* Map over the fetched team members */}
           {team.map((/** @type {any} */ member) => ( 
-            // Wrap each member in a DashboardCard for glass effect
             <DashboardCard key={member.id} className="p-6 flex flex-col items-center text-center">
               <img
-                src={member.avatarUrl || `https://i.pravatar.cc/150?u=${member.id}`} // Use avatarUrl from fetched data
+                src={member.avatarUrl || `https://i.pravatar.cc/150?u=${member.id}`} 
                 alt={member.name || 'User'}
-                className="w-20 h-20 rounded-full border-4 border-white/20 dark:border-gray-700 mb-4 shadow-md" // Adjusted border
+                className="w-20 h-20 rounded-full border-4 border-white/20 dark:border-gray-700 mb-4 shadow-md" 
               />
               <h2 className="font-semibold text-lg text-black dark:text-white">{member.name || 'Unnamed User'}</h2>
               {/* Optional: Add Role later to User model and display here */}

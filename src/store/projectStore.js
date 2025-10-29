@@ -1,38 +1,79 @@
 import { create } from 'zustand';
-import api from './api';
+import api from './api'; 
 
-const useProjectStore = create((set, get) => ({ // <-- Add get
+const useProjectStore = create((set, get) => ({
   projects: [],
   currentProject: null,
-  isAddingProject: false, // <-- 1. ADD THIS
-  
-  // 2. ADD THIS FUNCTION
+  isAddingProject: false,
+  loading: false,
+
   toggleAddProjectModal: (isOpen) => set({ isAddingProject: isOpen }),
 
   fetchProjects: async () => {
+    set({ loading: true });
     try {
       const res = await api.get('/api/projects');
-      set({ projects: res.data });
-      // Optionally set the first project as current
-      if (res.data.length > 0 && !get().currentProject) {
-        set({ currentProject: res.data[0] });
+      const sortedProjects = res.data.sort((a, b) => a.name.localeCompare(b.name));
+      set({ projects: sortedProjects, loading: false });
+
+      if (sortedProjects.length > 0 && !get().currentProject) {
+        set({ currentProject: sortedProjects[0] });
+      } else if (sortedProjects.length === 0) {
+        set({ currentProject: null });
       }
     } catch (err) {
-      console.error('Fetch projects error', err.message);
+      console.error('Fetch projects error:', err);
+      set({ loading: false, projects: [] });
     }
   },
 
   setCurrentProject: (project) => set({ currentProject: project }),
 
   createProject: async (name, description) => {
-    try {
-      const res = await api.post('/api/projects', { name, description });
-      set((state) => ({ projects: [res.data, ...state.projects] }));
-      set({ isAddingProject: false }); // <-- 3. ADD THIS (to close modal on success)
-    } catch (err) {
-      console.error('Create project error', err.message);
+    if (!name || name.trim() === '') {
+      console.error("Project name cannot be empty");
+      throw new Error("Project name cannot be empty");
     }
-  }
+    try {
+      const res = await api.post('/api/projects', { name: name.trim(), description });
+      const newProject = res.data;
+
+      set((state) => ({
+        projects: [...state.projects, newProject].sort((a, b) => a.name.localeCompare(b.name)),
+      }));
+
+      set({ isAddingProject: false, currentProject: newProject });
+      return newProject;
+    } catch (err) {
+      console.error('Create project error:', err);
+      throw err;
+    }
+  },
+
+  deleteProject: async (projectId) => {
+    if (!projectId) {
+      console.error("Delete project called with invalid ID");
+      throw new Error("Invalid Project ID");
+    }
+    try {
+      const response = await api.delete(`/api/projects/${projectId}`);
+      set((state) => ({
+        projects: state.projects.filter((p) => p.id !== projectId),
+      }));
+
+      if (get().currentProject?.id === projectId) {
+        const remainingProjects = get().projects;
+        set({ currentProject: remainingProjects.length > 0 ? remainingProjects[0] : null });
+      }
+
+      console.log(response.data.message);
+    } catch (err) {
+      console.error('Delete project error:', err);
+      const errorMessage = err?.response?.data?.message || 'Failed to delete project. Please try again.';
+      alert(errorMessage);
+      throw err;
+    }
+  },
 }));
 
 export default useProjectStore;

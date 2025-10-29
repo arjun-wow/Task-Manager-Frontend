@@ -11,7 +11,6 @@ export default function AddProjectModal() {
     e.preventDefault();
     if (!name.trim()) return;
     createProject(name, description);
-    // Modal will close via state change in the store
   };
 
   return (

@@ -1,13 +1,12 @@
-import { useState } from 'react'; // Ensure this import is correct
+import { useState } from 'react'; 
 import { motion, AnimatePresence } from 'framer-motion';
-import api from '../store/api'; // Use the central api instance
-import { X, Mail, Loader, CheckCircle, XCircle } from 'lucide-react'; // Added icons
+import api from '../store/api'; 
+import { X, Mail, Loader, CheckCircle, XCircle } from 'lucide-react'; 
 
 export default function ForgotPasswordModal({ isOpen, onClose }) {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  // Line 10 - Check if useState is correctly imported
 const [status, setStatus] = useState('idle');
 
 
@@ -16,25 +15,24 @@ const [status, setStatus] = useState('idle');
     e.preventDefault();
     setMessage('');
     setError('');
-    setStatus('loading'); // Set status to loading
+    setStatus('loading'); 
     try {
       const response = await api.post('/api/auth/forgot-password', { email });
       setMessage(response.data.message || 'Password reset link sent (if account exists).');
-      setStatus('success'); // Set status to success
-      setEmail(''); // Clear email on success
+      setStatus('success'); 
+      setEmail(''); 
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to send reset link. Please try again.');
-      setStatus('error'); // Set status to error
+      setStatus('error'); 
     }
   };
 
-  // Close handler that also resets the state completely
   const handleClose = () => {
       setEmail('');
       setMessage('');
       setError('');
-      setStatus('idle'); // Reset status on close
-      onClose(); // Call the parent's close handler
+      setStatus('idle'); 
+      onClose(); 
   }
 
   return (
@@ -45,17 +43,17 @@ const [status, setStatus] = useState('idle');
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={handleClose} // Close on backdrop click
+          onClick={handleClose} 
         >
           <motion.div
-            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside modal
+            onClick={(e) => e.stopPropagation()} 
             className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-2xl p-6 w-full max-w-md shadow-2xl border border-white/20 dark:border-gray-700/50 relative"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 30 }}
             transition={{ duration: 0.2 }}
           >
-            {/* Close Button */}
+            {/* Close Button*/}
             <button
                 onClick={handleClose}
                 className="absolute top-3 right-3 p-1.5 rounded-md text-gray-500 hover:bg-black/5 dark:text-gray-400 dark:hover:bg-white/10 transition-colors"
@@ -64,7 +62,7 @@ const [status, setStatus] = useState('idle');
               <X size={18} />
             </button>
 
-             {/* Animated State Display */}
+             {/*Animated State Display */}
             <AnimatePresence mode="wait">
                 {status === 'success' ? (
                      <motion.div key="success-fp" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-6">
@@ -88,14 +86,13 @@ const [status, setStatus] = useState('idle');
                           <h3 className="text-lg font-semibold text-black dark:text-white mb-2">Error</h3>
                           <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
                            <button
-                             onClick={() => setStatus('idle')} // Go back to form on error retry
+                             onClick={() => setStatus('idle')} 
                              className="mt-6 px-4 py-2 text-sm rounded-lg border border-black/10 dark:border-white/20 font-medium text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition"
                            >
                              Try Again
                            </button>
                      </motion.div>
                 ) : (
-                     // Idle or Loading State (Show Form)
                      <motion.div key="form-fp" initial={{ opacity: 1 }} exit={{ opacity: 0 }}>
                         <h3 className="text-xl font-semibold text-black dark:text-white mb-4">Forgot Password</h3>
                         <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">

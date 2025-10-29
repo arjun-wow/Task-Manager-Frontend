@@ -51,7 +51,6 @@ export default function ProjectKanban() {
     const taskId = Number(draggableId);
     const newStatus = destination.droppableId; // This is 'TO_DO', 'IN_PROGRESS', or 'DONE'
     
-    // --- Optimistic UI Update ---
     // 1. Find the moved task
     const movedTask = tasks.find(t => t.id === taskId);
     if (!movedTask) return;
@@ -61,24 +60,19 @@ export default function ProjectKanban() {
       task.id === taskId ? { ...task, status: newStatus } : task
     );
     
-    // 3. Update the Zustand store immediately
     useTaskStore.setState({ tasks: newTasks });
-    // --- End Optimistic UI Update ---
-
-    // Call API to persist the change (handle potential errors)
+   
     try {
         await updateTaskStatus(taskId, newStatus);
-        // If successful, the state is already updated optimistically.
     } catch (error) {
         console.error("Failed to update task status:", error);
-        // Revert the optimistic update if the API call fails
-        useTaskStore.setState({ tasks }); // Revert to original tasks array
-        alert("Failed to move task. Please try again."); // Simple error feedback
+        useTaskStore.setState({ tasks }); 
+        alert("Failed to move task. Please try again."); 
     }
   };
 
   const openAddTaskModal = (columnId) => {
-    setAddingToColumn(columnId); // Set which column triggered the add
+    setAddingToColumn(columnId); 
     setShowModal(true);
   };
 
@@ -132,7 +126,6 @@ export default function ProjectKanban() {
                 <div 
                   ref={provided.innerRef} 
                   {...provided.droppableProps} 
-                  // Subtle glass effect for columns
                   className={`bg-white/5 dark:bg-gray-900/30 rounded-xl p-4 min-h-[400px] border border-white/10 dark:border-gray-700/50 backdrop-blur-sm transition-colors duration-200 ${snapshot.isDraggingOver ? 'bg-blue-500/10 dark:bg-blue-900/30' : ''}`}
                 >
                   {/* Column Header */}
@@ -157,7 +150,7 @@ export default function ProjectKanban() {
                                 ref={prov.innerRef} 
                                 {...prov.draggableProps} 
                                 {...prov.dragHandleProps}
-                                style={{...prov.draggableProps.style}} // Important for positioning
+                                style={{...prov.draggableProps.style}} 
                                 className={`${snap.isDragging ? 'shadow-xl scale-105' : 'shadow-md'} transition-transform duration-150 ease-in-out`}
                                 >
                                 <TaskCard task={task} />
@@ -189,7 +182,7 @@ export default function ProjectKanban() {
             <AddTaskModal 
                 onClose={()=>setShowModal(false)} 
                 projectId={projectId} 
-                initialStatus={addingToColumn} // Pass the column status to the modal
+                initialStatus={addingToColumn} 
             />
         }
       </AnimatePresence>
@@ -197,6 +190,5 @@ export default function ProjectKanban() {
   );
 }
 
-// Ensure React is imported if not already globally available or in setup
 import React from 'react'; 
 

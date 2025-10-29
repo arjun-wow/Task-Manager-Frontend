@@ -13,7 +13,6 @@ const useTeamStore = create((set) => ({
     } catch (err) {
       console.error("Fetch team error", err.message);
       set({ loading: false });
-      // Fallback dummy data if API fails, to match design
       set({ team: [
         { id: 1, name: 'Dana R.', role: 'Project Manager', avatarUrl: 'https://i.pravatar.cc/150?img=1' },
         { id: 2, name: 'Elon S.', role: 'Key Account Plann.', avatarUrl: 'https://i.pravatar.cc/150?img=2' },

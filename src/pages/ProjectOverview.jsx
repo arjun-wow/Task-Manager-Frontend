@@ -2,11 +2,10 @@ import { useEffect, useMemo } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import useProjectStore from '../store/projectStore';
 import useTaskStore from '../store/taskStore';
-import DashboardCard from '../components/dashboard/DashboardCard'; // Use the glass card
+import DashboardCard from '../components/dashboard/DashboardCard'; 
 import { format } from 'date-fns';
 
-// Helper function to get appropriate color classes for status and priority
-// Adjusted slightly for better contrast on light glass backgrounds if needed
+
 const getStatusColor = (status) => {
   switch (status) {
     case 'TO_DO': return 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
@@ -28,7 +27,7 @@ const getPriorityColor = (priority) => {
 
 export default function ProjectOverview() {
   const { projectId } = useParams();
-  const location = useLocation(); // To highlight the active tab
+  const location = useLocation(); 
   const { projects, setCurrentProject } = useProjectStore();
   const { tasks, fetchTasks } = useTaskStore();
 
@@ -41,7 +40,6 @@ export default function ProjectOverview() {
     fetchTasks(projectId);
   }, [projectId, project, setCurrentProject, fetchTasks]);
 
-  // Group tasks by assignee for the "Task by user" section
   const tasksByUser = useMemo(() => {
     if (!tasks || tasks.length === 0) return {};
     return tasks.reduce((acc, task) => {

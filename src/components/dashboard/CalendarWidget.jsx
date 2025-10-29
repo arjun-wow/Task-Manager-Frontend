@@ -10,14 +10,12 @@ export default function CalendarWidget() {
   const today = new Date();
   const monthStart = startOfMonth(currentDate);
   const daysInMonth = getDaysInMonth(currentDate);
-  const startDayOfWeek = getDay(monthStart); // 0 = Sunday
+  const startDayOfWeek = getDay(monthStart); 
 
   const days = [];
-  // Fill in blank days before the 1st
   for (let i = 0; i < startDayOfWeek; i++) {
     days.push(null);
   }
-  // Fill in the days of the month
   for (let i = 1; i <= daysInMonth; i++) {
     days.push(new Date(currentDate.getFullYear(), currentDate.getMonth(), i));
   }
@@ -95,7 +93,7 @@ export default function CalendarWidget() {
           ))}
         </div>
         
-        {/* Dates Grid */}
+        {}
         <div className="grid grid-cols-7 gap-1">
           {days.map((day, index) => {
             const isTodayFlag = day && isToday(day);
@@ -130,7 +128,6 @@ export default function CalendarWidget() {
         </div>
       </div>
 
-      {/* Upcoming Events Preview */}
       <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between mb-3">
           <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">

@@ -29,7 +29,6 @@ export default function NewComments() {
           </a>
         ))}
       </div>
-      {/* Tags section from design */}
       <div className="flex flex-wrap gap-2 mt-6 pt-6 border-t dark:border-gray-800">
         {dummyTags.map(tag => (
           <a href="#" key={tag.id} className={`text-xs font-semibold px-3 py-1 rounded-lg ${tag.color} flex items-center justify-between`}>

@@ -7,7 +7,6 @@ const api = axios.create({
   baseURL: API_BASE,
 });
 
-// Interceptor to add the auth token to every request
 api.interceptors.request.use(
   (config) => {
     const token = useAuthStore.getState().token;
@@ -21,7 +20,6 @@ api.interceptors.request.use(
   }
 );
 
-// Optional: Interceptor to handle 401 (Unauthorized) errors
 api.interceptors.response.use(
   (response) => response,
   (error) => {

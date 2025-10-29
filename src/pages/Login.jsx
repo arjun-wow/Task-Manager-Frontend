@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
-import { User, Lock, ArrowRight, CheckCircle, Loader, XCircle, Mail } from 'lucide-react'; // Added Mail
+import { User, Lock, ArrowRight, CheckCircle, Loader, XCircle, Mail } from 'lucide-react'; 
 import { motion, AnimatePresence } from 'framer-motion';
-import ForgotPasswordModal from '../components/ForgotPasswordModal'; // Import forgot password modal
+import ForgotPasswordModal from '../components/ForgotPasswordModal'; 
 
-// --- SVG Icons for Social Buttons ---
+
 const GoogleIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
     {/* ... Google SVG Path Data ... */}
@@ -22,10 +22,9 @@ const GitHubIcon = () => (
     <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
   </svg>
 );
-// --- End SVG Icons ---
 
 
-// --- Animation Components (Success/Error) ---
+// --Animation Components 
 const SuccessAnimation = () => (
   <motion.div key="success" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.2 }} className="text-center py-8">
     <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }} className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6 backdrop-blur-sm">
@@ -61,7 +60,6 @@ const ErrorAnimation = ({ error, onRetry }) => (
     </motion.button>
   </motion.div>
 );
-// --- End Animation Components ---
 
 
 export default function Login() {
@@ -142,19 +140,17 @@ export default function Login() {
 
         {/* Header */}
         <header className="flex justify-between items-center w-full relative z-10">
-          {/* --- CHANGE HEADER TEXT COLOR --- */}
+          {/* CHANGE HEADER TEXT COLOr*/}
           <h1 className="text-2xl font-botext-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-8ld text-white dark:text-white"> 
             WeManage
           </h1>
           <AnimatePresence mode="wait">
             {!loginStatus && (
               <motion.p key="switch-text" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} 
-                // --- CHANGE HEADER TEXT COLOR ---
                 className="text-sm text-gray-800 dark:text-white/80"> 
                 {isLogin ? "Don't have an account?" : "Already have an account?"}
                 <button
                   onClick={() => { setIsLogin(!isLogin); setError(null); }}
-                   // --- CHANGE HEADER TEXT COLOR ---
                   className="font-semibold text-black dark:text-white ml-2 hover:underline inline-flex items-center transition-all duration-300"
                 >
                   {isLogin ? "Sign up" : "Log In"}
@@ -175,14 +171,12 @@ export default function Login() {
                 <ErrorAnimation error={error} onRetry={handleRetry} />
               ) : (
                 <motion.div key="login-form" initial={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                   {/* --- CHANGE FORM HEADER TEXT COLOR --- */}
                   <h2 className="text-2xl font-semibold text-center mb-2 text-white dark:text-white">
                     {isLogin ? "Log in to your account" : "Create your account"}
                   </h2>
                   
                   {error && (
                     <motion.p initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} 
-                      // Keep error text red
                       className="text-red-600 dark:text-red-300 text-sm text-center my-4 bg-red-500/10 py-2 rounded-lg">
                       {error}
                     </motion.p>
@@ -193,7 +187,6 @@ export default function Login() {
                     <div className="space-y-3 my-6">
                       <a
                         href={`${backendUrl}/api/auth/google`} 
-                        // Keep Google button blue with white text
                         className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-semibold text-sm bg-blue-600 text-white hover:bg-blue-700 transition-all duration-300 border border-blue-700"
                       >
                         <GoogleIcon />
@@ -202,7 +195,6 @@ export default function Login() {
                       <button
                         type="button"
                         disabled
-                         // Keep GitHub button black with white text
                         className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-semibold text-sm bg-gray-900 text-white hover:bg-gray-700 transition-all duration-300 border border-gray-700 opacity-50 cursor-not-allowed"
                       >
                         <GitHubIcon />
@@ -214,7 +206,6 @@ export default function Login() {
                   {/* "or" separator */}
                   {isLogin && (
                     <div className="flex items-center my-6">
-                       {/* --- CHANGE SEPARATOR COLOR --- */}
                       <hr className="flex-grow border-gray-300 dark:border-white/20" />
                       <span className="mx-4 text-sm text-gray-500 dark:text-white/60">or</span>
                       <hr className="flex-grow border-gray-300 dark:border-white/20" />
@@ -226,10 +217,8 @@ export default function Login() {
                     {/* Name Field */}
                     {!isLogin && (
                       <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="relative overflow-hidden">
-                         {/* --- CHANGE INPUT ICON/TEXT/PLACEHOLDER COLOR --- */}
                         <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/60" size={18} />
                         <input type="text" placeholder="Your Name" value={name} onChange={(e) => setName(e.target.value)}
-                           // --- CHANGE INPUT BACKGROUND/TEXT/PLACEHOLDER COLOR ---
                           className="w-full pl-10 pr-3 py-3 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-white/30 focus:border-transparent dark:focus:border-white/30 text-black dark:text-white placeholder-gray-500 dark:placeholder-white/60 transition-all duration-300"
                         />
                       </motion.div>
@@ -237,10 +226,8 @@ export default function Login() {
                     
                     {/* Email Field */}
                     <div className="relative">
-                       {/* --- CHANGE INPUT ICON/TEXT/PLACEHOLDER COLOR --- */}
                       <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/60" size={18} />
                       <input type="email" placeholder="account@refero.design" value={email} onChange={(e) => setEmail(e.target.value)}
-                         // --- CHANGE INPUT BACKGROUND/TEXT/PLACEHOLDER COLOR ---
                         className="w-full pl-10 pr-3 py-3 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-white/30 focus:border-transparent dark:focus:border-white/30 text-black dark:text-white placeholder-gray-500 dark:placeholder-white/60 transition-all duration-300"
                       />
                     </div>

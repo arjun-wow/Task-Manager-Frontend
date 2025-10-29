@@ -16,7 +16,7 @@ export default function UrgentTasks() {
     }
   }, [currentProject, fetchTasks]);
 
-  // Filter and sort urgent tasks
+
   const urgentTasks = useMemo(() => {
     if (!tasks.length) return [];
 
@@ -34,19 +34,16 @@ export default function UrgentTasks() {
         return isUrgent && isNotCompleted;
       })
       .sort((a, b) => {
-        // Sort by due date (closest first)
         if (a.dueDate && b.dueDate) {
           return new Date(a.dueDate) - new Date(b.dueDate);
         }
-        // Tasks with due dates come first
         if (a.dueDate && !b.dueDate) return -1;
         if (!a.dueDate && b.dueDate) return 1;
         
-        // Then sort by priority
         const priorityOrder = { HIGH: 3, MEDIUM: 2, LOW: 1 };
         return priorityOrder[b.priority] - priorityOrder[a.priority];
       })
-      .slice(0, 5); // Show only top 5 urgent tasks
+      .slice(0, 5); 
   }, [tasks]);
 
   const getTaskUrgency = (task) => {

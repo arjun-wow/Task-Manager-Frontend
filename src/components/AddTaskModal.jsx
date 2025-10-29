@@ -5,19 +5,19 @@ import useTeamStore from "../store/teamStore";
 import { motion } from 'framer-motion';
 import { X, Calendar, User, Flag, Tag } from 'lucide-react';
 
-export default function AddTaskModal({ onClose, projectId: initialProjectId }){
+export default function AddTaskModal({ onClose, projectId: initialProjectId }) {
   const { addTask } = useTaskStore();
   const { projects, currentProject, fetchProjects } = useProjectStore();
   const { team, fetchTeam } = useTeamStore();
 
-  const [form, setForm] = useState({ 
-    title: '', 
-    description: '', 
-    priority: 'MEDIUM', 
+  const [form, setForm] = useState({
+    title: '',
+    description: '',
+    priority: 'MEDIUM',
     status: 'TO_DO',
     dueDate: '',
     assigneeId: '',
-    projectId: initialProjectId || '' 
+    projectId: initialProjectId || ''
   });
 
   useEffect(() => {
@@ -26,7 +26,6 @@ export default function AddTaskModal({ onClose, projectId: initialProjectId }){
   }, [fetchProjects, fetchTeam]);
 
   useEffect(() => {
-    // If no projectId provided, use current project or first project
     if (!form.projectId && currentProject) {
       setForm(prev => ({ ...prev, projectId: currentProject.id }));
     } else if (!form.projectId && projects.length > 0) {
@@ -36,23 +35,16 @@ export default function AddTaskModal({ onClose, projectId: initialProjectId }){
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!form.title.trim()) {
-      alert('Task title is required');
-      return;
-    }
-    if (!form.projectId) {
-      alert('Please select a project');
-      return;
-    }
-    
+    if (!form.title.trim()) return alert('Task title is required');
+    if (!form.projectId) return alert('Please select a project');
+
     try {
-      await addTask({ 
-        ...form, 
+      await addTask({
+        ...form,
         dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
         assigneeId: form.assigneeId ? Number(form.assigneeId) : null,
         projectId: Number(form.projectId)
       });
-      
       onClose();
     } catch (error) {
       console.error('Error adding task:', error);
@@ -71,43 +63,50 @@ export default function AddTaskModal({ onClose, projectId: initialProjectId }){
   };
 
   return (
-    <motion.div 
-      className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+    <motion.div
+      className="fixed inset-0 bg-black/60 backdrop-blur-xl flex items-center justify-center z-50 p-4"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       onClick={onClose}
     >
-      <motion.div 
-        className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-lg shadow-lg max-h-[90vh] overflow-y-auto"
+      <motion.div
+        className="bg-gradient-to-br from-gray-900/80 via-gray-800/70 to-purple-900/60 dark:from-gray-900/90 dark:to-purple-800/70 rounded-2xl p-8 w-full max-w-lg shadow-2xl border border-white/10 relative overflow-hidden"
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 30 }}
-        transition={{ duration: 0.2 }}
+        transition={{ duration: 0.25 }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Add New Task</h3>
+        {}
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-400/5 to-transparent pointer-events-none rounded-2xl" />
+
+        {/*Header*/} 
+        <div className="flex items-center justify-between mb-6 relative z-10">
+          <h3 className="text-2xl font-semibold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+            Add New Task
+          </h3>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="p-2 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition"
           >
-            <X size={20} className="text-gray-500" />
+            <X size={20} />
           </button>
         </div>
 
-        <form onSubmit={submit} className="space-y-4">
-          {/* Project Selection */}
+        {/*Form*/}
+        <form onSubmit={submit} className="space-y-5 relative z-10">
+          {/* Project */}
           <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
               <Tag size={16} />
               Project
             </label>
-            <select 
+            <select
               name="projectId"
-              value={form.projectId} 
+              value={form.projectId}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-4 py-2.5 bg-white/5 text-gray-100 border border-white/10 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
               required
             >
               <option value="">Select a project</option>
@@ -119,48 +118,48 @@ export default function AddTaskModal({ onClose, projectId: initialProjectId }){
             </select>
           </div>
 
-          {/* Task Title */}
+          {/* Title */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Task Title *
             </label>
-            <input 
-              className="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" 
-              placeholder="What needs to be done?" 
+            <input
               name="title"
-              value={form.title} 
+              value={form.title}
               onChange={handleChange}
+              placeholder="What needs to be done?"
+              className="w-full px-4 py-2.5 bg-white/5 text-gray-100 border border-white/10 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-500 transition-all"
               required
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Description
             </label>
-            <textarea 
-              className="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" 
-              placeholder="Add details about this task..." 
-              rows={3} 
+            <textarea
               name="description"
-              value={form.description} 
-              onChange={handleChange} 
+              value={form.description}
+              onChange={handleChange}
+              placeholder="Add details about this task..."
+              rows={3}
+              className="w-full px-4 py-2.5 bg-white/5 text-gray-100 border border-white/10 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-500 transition-all"
             />
           </div>
 
+          {/* Grid */}
           <div className="grid grid-cols-2 gap-4">
             {/* Assignee */}
             <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                <User size={16} />
-                Assign To
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
+                <User size={16} /> Assign To
               </label>
-              <select 
-                name="assigneeId" 
-                value={form.assigneeId} 
+              <select
+                name="assigneeId"
+                value={form.assigneeId}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-full px-4 py-2.5 bg-white/5 text-gray-100 border border-white/10 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
               >
                 <option value="">Unassigned</option>
                 {getProjectTeam().map(user => (
@@ -173,14 +172,12 @@ export default function AddTaskModal({ onClose, projectId: initialProjectId }){
 
             {/* Status */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Status
-              </label>
-              <select 
-                name="status" 
-                value={form.status} 
+              <label className="block text-sm font-medium text-gray-300 mb-2">Status</label>
+              <select
+                name="status"
+                value={form.status}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-full px-4 py-2.5 bg-white/5 text-gray-100 border border-white/10 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
               >
                 <option value="TO_DO">To Do</option>
                 <option value="IN_PROGRESS">In Progress</option>
@@ -190,15 +187,14 @@ export default function AddTaskModal({ onClose, projectId: initialProjectId }){
 
             {/* Priority */}
             <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                <Flag size={16} />
-                Priority
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
+                <Flag size={16} /> Priority
               </label>
-              <select 
-                name="priority" 
-                value={form.priority} 
+              <select
+                name="priority"
+                value={form.priority}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-full px-4 py-2.5 bg-white/5 text-gray-100 border border-white/10 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
               >
                 <option value="LOW">Low</option>
                 <option value="MEDIUM">Medium</option>
@@ -208,31 +204,31 @@ export default function AddTaskModal({ onClose, projectId: initialProjectId }){
 
             {/* Due Date */}
             <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                <Calendar size={16} />
-                Due Date
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
+                <Calendar size={16} /> Due Date
               </label>
-              <input 
-                type="datetime-local" 
+              <input
+                type="datetime-local"
                 name="dueDate"
-                value={form.dueDate} 
-                onChange={handleChange} 
-                className="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" 
+                value={form.dueDate}
+                onChange={handleChange}
+                className="w-full px-4 py-2.5 bg-white/5 text-gray-100 border border-white/10 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
-            <button 
-              type="button" 
+          {/* Buttons */}
+          <div className="flex justify-end gap-3 pt-5">
+            <button
+              type="button"
               onClick={onClose}
-              className="px-5 py-2 rounded-lg border border-gray-300 dark:border-gray-600 font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              className="px-5 py-2.5 rounded-lg border border-white/10 text-gray-300 hover:bg-white/10 transition-all font-medium"
             >
               Cancel
             </button>
-            <button 
+            <button
               type="submit"
-              className="px-5 py-2 rounded-lg bg-primary text-white font-medium hover:bg-accent transition-colors"
+              className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
             >
               Add Task
             </button>
