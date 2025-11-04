@@ -9,7 +9,7 @@ import { useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Plus } from 'lucide-react';
 
-// Define the columns based on your TaskStatus enum in Prisma
+
 const columnsConfig = [
   { id: 'TO_DO', title: 'To Do' },
   { id: 'IN_PROGRESS', title: 'In Progress' },
@@ -22,7 +22,7 @@ export default function ProjectKanban() {
   const { tasks, fetchTasks, updateTaskStatus, loading } = useTaskStore();
   const { projects } = useProjectStore();
   const [showModal, setShowModal] = useState(false);
-  const [addingToColumn, setAddingToColumn] = useState('TO_DO'); // Default column for new tasks
+  const [addingToColumn, setAddingToColumn] = useState('TO_DO'); 
 
   const project = projects.find(p => p.id === Number(projectId));
 
@@ -30,7 +30,6 @@ export default function ProjectKanban() {
     fetchTasks(projectId);
   }, [projectId, fetchTasks]);
 
-  // Memoize grouped tasks to prevent recalculation on every render
   const groupedTasks = React.useMemo(() => {
     return columnsConfig.reduce((acc, col) => {
         acc[col.id] = tasks.filter(t => t.status === col.id);
@@ -42,15 +41,12 @@ export default function ProjectKanban() {
   const onDragEnd = async (result) => {
     const { source, destination, draggableId } = result;
 
-    // Dropped outside a valid droppable
     if (!destination) return;
 
-    // Dropped in the same place
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
     
     const taskId = Number(draggableId);
-    const newStatus = destination.droppableId; // This is 'TO_DO', 'IN_PROGRESS', or 'DONE'
-    
+    const newStatus = destination.droppableId; 
     // 1. Find the moved task
     const movedTask = tasks.find(t => t.id === taskId);
     if (!movedTask) return;
@@ -81,10 +77,10 @@ export default function ProjectKanban() {
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-black dark:text-white drop-shadow-lg">
+          <h1 className="text-3xl font-bold tracking-tight text-white dark:text-white drop-shadow-lg">
             {project?.name || 'Loading Project...'}
           </h1>
-          <p className="mt-1 text-base text-gray-600 dark:text-gray-300">
+          <p className="mt-1 text-base text-white-600 dark:text-gray-300">
             Kanban View
           </p>
         </div>

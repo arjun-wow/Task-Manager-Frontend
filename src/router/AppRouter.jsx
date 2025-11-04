@@ -16,6 +16,8 @@ const ProjectKanban = lazy(() => import('../pages/ProjectKanban'));
 const ProjectOverview = lazy(() => import('../pages/ProjectOverview'));
 const ResetPasswordPage = lazy(() => import('../pages/ResetPasswordPage'));
 const AuthCallback = lazy(() => import('../pages/AuthCallback'));
+const Reports = lazy(() => import('../pages/Reports'));
+
 
 const ProtectedRoute = ({ children }) => {
   const { token } = useAuthStore();
@@ -62,6 +64,7 @@ export default function AppRouter() {
                     <Route path="/" element={<Dashboard />} />
                     <Route path="/tasks" element={<MyTasks />} />
                     <Route path="/calendar" element={<CalendarPage />} />
+                    <Route path="/reports" element={<Reports />} />
                     <Route path="/team" element={<Team />} />
                     <Route path="/settings" element={<Settings />} />
 
