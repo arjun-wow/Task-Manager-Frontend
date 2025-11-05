@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import api from './api'; 
+import api from './api';
 
 const useProjectStore = create((set, get) => ({
   projects: [],
@@ -13,7 +13,7 @@ const useProjectStore = create((set, get) => ({
     set({ loading: true });
     try {
       const res = await api.get('/api/projects');
-      const sortedProjects = res.data.sort((a, b) => a.name.localeCompare(b.name));
+      const sortedProjects = (res?.data || []).sort((a, b) => a.name.localeCompare(b.name));
       set({ projects: sortedProjects, loading: false });
 
       if (sortedProjects.length > 0 && !get().currentProject) {
@@ -21,9 +21,11 @@ const useProjectStore = create((set, get) => ({
       } else if (sortedProjects.length === 0) {
         set({ currentProject: null });
       }
+      return sortedProjects;
     } catch (err) {
       console.error('Fetch projects error:', err);
       set({ loading: false, projects: [] });
+      throw err;
     }
   },
 
@@ -66,7 +68,7 @@ const useProjectStore = create((set, get) => ({
         set({ currentProject: remainingProjects.length > 0 ? remainingProjects[0] : null });
       }
 
-      console.log(response.data.message);
+      console.log(response.data?.message || "Project deleted");
     } catch (err) {
       console.error('Delete project error:', err);
       const errorMessage = err?.response?.data?.message || 'Failed to delete project. Please try again.';
