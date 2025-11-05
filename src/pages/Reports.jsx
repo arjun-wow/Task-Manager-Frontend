@@ -1,150 +1,202 @@
-import React, { useEffect, useState } from "react";
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import useProjectStore from "../store/projectStore";
-import { motion } from "framer-motion";
-import { Loader } from "lucide-react";
+import { useEffect, useState } from 'react';
+import api from '../store/api'; // Use authenticated api instance
+import DashboardCard from '../components/dashboard/DashboardCard';
+import { 
+    ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, 
+    LineChart, Line, CartesianGrid, PieChart, Pie, Cell 
+} from 'recharts'; // Import chart components including PieChart
+import { Briefcase, Users, CheckCircle2, ListChecks, Loader } from 'lucide-react'; // Icons
 
-const COLORS = ["#6b7280", "#3b82f6", "#22c55e"]; // To Do (gray), In Progress (blue), Done (green)
-
-const Reports = () => {
-  const { currentProject } = useProjectStore();
-  const [reportData, setReportData] = useState([]);
-  const [stats, setStats] = useState({ total: 0, completionRate: 0 });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchReportData = async () => {
-      try {
-        setLoading(true);
-        const url = currentProject
-          ? `http://localhost:5000/api/reports?projectId=${currentProject.id}`
-          : "http://localhost:5000/api/reports";
-
-        const res = await fetch(url);
-        const data = await res.json();
-
-        setReportData([
-          { name: "To Do", value: data.toDo },
-          { name: "In Progress", value: data.inProgress },
-          { name: "Done", value: data.done },
-        ]);
-        setStats({ total: data.total, completionRate: data.completionRate });
-      } catch (error) {
-        console.error("Error fetching report data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchReportData();
-  }, [currentProject]);
-
-  return (
-    <div className="min-h-screen w-full bg-gray-50 dark:bg-gray-900 p-6">
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
-            Reports & Insights
-          </h1>
-          <p className="mt-2 text-base text-gray-600 dark:text-gray-300">
-            {currentProject
-              ? `Project: ${currentProject.name}`
-              : "Overall performance across all projects"}
-          </p>
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="flex flex-col items-center justify-center h-80">
-          <Loader className="animate-spin text-gray-500 dark:text-gray-400 mb-4" size={32} />
-          <p className="text-gray-600 dark:text-gray-400">Fetching report data...</p>
-        </div>
-      ) : (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="grid grid-cols-1 md:grid-cols-2 gap-6"
-        >
-          {/* Chart Card */}
-          <div className="bg-white dark:bg-gray-800 shadow-md rounded-2xl p-6 flex flex-col justify-center items-center border border-gray-200 dark:border-gray-700">
-            <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-4">
-              Task Distribution
-            </h2>
-            {reportData && reportData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={reportData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={100}
-                    dataKey="value"
-                  >
-                    {reportData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value, name) => [`${value} tasks`, name]}
-                    contentStyle={{
-                      backgroundColor: "#1f2937",
-                      color: "white",
-                      borderRadius: "8px",
-                      border: "none",
-                    }}
-                  />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="text-gray-500 dark:text-gray-400">No data available</p>
-            )}
-          </div>
-
-          {/* Insights Card */}
-          <div className="bg-white dark:bg-gray-800 shadow-md rounded-2xl p-6 border border-gray-200 dark:border-gray-700 flex flex-col justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-4">
-                Insights Summary
-              </h2>
-              {reportData.length > 0 && (
-                <ul className="space-y-3 text-gray-700 dark:text-gray-300">
-                  {reportData.map((item, index) => (
-                    <li key={index} className="flex justify-between">
-                      <span>{item.name}</span>
-                      <span className="font-semibold">{item.value}</span>
-                    </li>
-                  ))}
-                  <li className="flex justify-between border-t border-gray-200 dark:border-gray-700 pt-3">
-                    <span className="font-semibold">Total Tasks</span>
-                    <span className="font-bold">{stats.total}</span>
-                  </li>
-                </ul>
-              )}
-            </div>
-
-            <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800 text-green-800 dark:text-green-300">
-              <p className="text-lg font-semibold">
-                ✅ Completion Rate:{" "}
-                <span className="text-green-600 dark:text-green-400">
-                  {stats.completionRate}%
-                </span>
-              </p>
-              <p className="text-sm mt-1">
-                {stats.completionRate >= 75
-                  ? "Great progress! Keep up the momentum."
-                  : stats.completionRate >= 40
-                  ? "You're halfway there — stay focused."
-                  : "Lots to do. Time to ramp up!"}
-              </p>
-            </div>
-          </div>
-        </motion.div>
-      )}
-    </div>
-  );
+// --- Colors for the Pie Chart ---
+const PIE_COLORS = {
+    TO_DO: '#eab308',       // Tailwind yellow-500
+    IN_PROGRESS: '#3b82f6', // Tailwind blue-500
+    DONE: '#22c55e',        // Tailwind green-500
 };
 
-export default Reports;
+// Custom Tooltip for Charts
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md p-3 rounded-lg shadow-lg border border-white/20 dark:border-gray-700/50 text-sm">
+        <p className="label text-black dark:text-white font-semibold">{`${label}`}</p>
+        {payload.map((entry, index) => (
+          <p key={`item-${index}`} style={{ color: entry.color || entry.fill }}>
+            {`${entry.name}: ${entry.value.toLocaleString()}`}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
+// Custom Legend Text
+const renderLegendText = (value, entry) => {
+  const { color } = entry;
+  // Use Tailwind classes for text color, fallback to inline style if needed
+  return <span className="text-gray-700 dark:text-gray-300 ml-1">{value}</span>;
+};
+
+
+export default function ReportPage() {
+    const [reportData, setReportData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const fetchReportData = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const res = await api.get('/api/reports/summary');
+                setReportData(res.data);
+            } catch (err) {
+                console.error("Fetch report error:", err);
+                const errorResponse = err; 
+                setError(errorResponse.response?.data?.message || 'Failed to load report data.');
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchReportData();
+    }, []);
+
+    // --- Format REAL task data for Pie Chart ---
+    // --- THIS IS THE FIX: Added ": []" at the end ---
+    const taskStatusChartData = reportData?.tasksByStatus ? [
+        { name: 'To Do', value: reportData.tasksByStatus.TO_DO, fill: PIE_COLORS.TO_DO },
+        { name: 'In Progress', value: reportData.tasksByStatus.IN_PROGRESS, fill: PIE_COLORS.IN_PROGRESS },
+        { name: 'Done', value: reportData.tasksByStatus.DONE, fill: PIE_COLORS.DONE },
+    ].filter(entry => entry.value > 0) : []; // <-- Added the "else" empty array
+
+
+    return (
+        <div className="space-y-6">
+            {/* Header */}
+            <div>
+                 <h1 className="text-3xl font-bold tracking-tight text-black dark:text-white drop-shadow-lg">
+                   Reports
+                 </h1>
+                 <p className="mt-1 text-base text-gray-600 dark:text-gray-300">
+                   Overview of workspace activity and performance
+                 </p>
+            </div>
+
+            {loading ? (
+                <div className="flex justify-center items-center p-10"><Loader className="animate-spin text-black dark:text-white"/></div>
+            ) : error ? (
+                <DashboardCard>
+                    <p className="text-center text-red-500">{error}</p>
+                </DashboardCard>
+            ) : !reportData ? (
+                 <DashboardCard>
+                    <p className="text-center text-gray-500 dark:text-gray-400">No report data available.</p>
+                </DashboardCard>
+            ) : (
+                <>
+                    {/* --- Summary Cards (Using Real Data) --- */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                         <DashboardCard className="flex items-center gap-4 p-4">
+                             <div className="p-3 bg-blue-500/10 rounded-lg"><Briefcase className="text-blue-500" size={24}/></div>
+                             <div>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Total Projects</p>
+                                <p className="text-2xl font-bold text-black dark:text-white">{reportData.totalProjects ?? 'N/A'}</p>
+                             </div>
+                         </DashboardCard>
+                         <DashboardCard className="flex items-center gap-4 p-4">
+                             <div className="p-3 bg-purple-500/10 rounded-lg"><Users className="text-purple-500" size={24}/></div>
+                              <div>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Team Size</p>
+                                <p className="text-2xl font-bold text-black dark:text-white">{reportData.teamSize ?? 'N/A'}</p>
+                             </div>
+                         </DashboardCard>
+                          <DashboardCard className="flex items-center gap-4 p-4">
+                             <div className="p-3 bg-green-500/10 rounded-lg"><CheckCircle2 className="text-green-500" size={24}/></div>
+                              <div>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Tasks Done</p>
+                                <p className="text-2xl font-bold text-black dark:text-white">{reportData.tasksByStatus?.DONE ?? '0'}</p>
+                             </div>
+                         </DashboardCard>
+                         <DashboardCard className="flex items-center gap-4 p-4">
+                              <div className="p-3 bg-yellow-500/10 rounded-lg"><ListChecks className="text-yellow-500" size={24}/></div>
+                              <div>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Tasks Pending</p>
+                                <p className="text-2xl font-bold text-black dark:text-white">{(reportData.tasksByStatus?.TO_DO ?? 0) + (reportData.tasksByStatus?.IN_PROGRESS ?? 0)}</p>
+                             </div>
+                         </DashboardCard>
+                    </div>
+
+                    {/* Chart Row 1 */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        
+                        {/* --- Task Status Pie Chart (Real Data) --- */}
+                        <DashboardCard title="Task Status Breakdown" className="lg:col-span-1">
+                            {taskStatusChartData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <PieChart>
+                                        <Pie
+                                            data={taskStatusChartData}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={60} // Donut chart
+                                            outerRadius={100}
+                                            fill="#8884d8"
+                                            paddingAngle={5}
+                                            dataKey="value"
+                                            labelLine={false}
+                                            label={({ percent }) => `${(percent * 100).toFixed(0)}%`} // Show percentage
+                                        >
+                                            {taskStatusChartData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.fill} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip content={<CustomTooltip />} />
+                                        <Legend iconType="circle" formatter={renderLegendText} />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <p className="text-center text-sm text-gray-500 dark:text-gray-400 h-[300px] flex items-center justify-center">
+                                    No task data available to display chart.
+                                </p>
+                            )}
+                        </DashboardCard>
+                        
+                        {/* Weekly Hours Bar Chart (Mock Data) */}
+                        <DashboardCard title="Total working hours (Mock)" className="lg:col-span-2">
+                            <ResponsiveContainer width="100%" height={300}>
+                                <BarChart data={reportData.weeklyHoursData} margin={{ top: 5, right: 0, left: -20, bottom: 5 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} />
+                                    <XAxis dataKey="day" fontSize={12} stroke="currentColor" className="text-gray-500 dark:text-gray-400" />
+                                    <YAxis fontSize={12} stroke="currentColor" className="text-gray-500 dark:text-gray-400" />
+                                    <Tooltip content={<CustomTooltip />} />
+                                    <Bar dataKey="hours" fill={PIE_COLORS.IN_PROGRESS} radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </DashboardCard>
+                    </div>
+
+                    {/* Chart Row 2 */}
+                    <DashboardCard title="Project revenue (Mock Data)">
+                         <div className="mb-2">
+                            <p className="text-2xl font-bold text-black dark:text-white">+${(reportData.projectRevenue?.current || 0).toLocaleString()}</p>
+                            <p className="text-sm text-green-500">Avg. ${(reportData.projectRevenue?.average || 0).toLocaleString()}/month</p>
+                         </div>
+                         <ResponsiveContainer width="100%" height={260}>
+                            <LineChart data={reportData.monthlyRevenueData} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+                                 <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} />
+                                 <XAxis dataKey="month" fontSize={12} stroke="currentColor" className="text-gray-500 dark:text-gray-400" />
+                                 <YAxis fontSize={12} stroke="currentColor" className="text-gray-500 dark:text-gray-400" tickFormatter={(value) => `$${value/1000}k`}/>
+                                 <Tooltip 
+                                    content={<CustomTooltip />}
+                                    formatter={(value) => `$${value.toLocaleString()}`}
+                                 />
+                                 <Line type="monotone" dataKey="revenue" stroke={PIE_COLORS.DONE} strokeWidth={2} dot={false} activeDot={{ r: 6 }} />
+                            </LineChart>
+                         </ResponsiveContainer>
+                    </DashboardCard>
+                </>
+            )}
+        </div>
+    );
+}

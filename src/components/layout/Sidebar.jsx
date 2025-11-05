@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Home, ListChecks, Calendar, PieChart, Plus, Users, Settings, LogOut, Trash2 } from 'lucide-react';
+import { Home, ListChecks, Calendar, PieChart, Plus, Users, Settings, LogOut, Trash2, Shield } from 'lucide-react'; // <-- INJECTED Shield
 import useAuthStore from '../../store/authStore';
 import useProjectStore from '../../store/projectStore';
 import { useEffect } from 'react';
@@ -25,7 +25,7 @@ const confirmDeleteProject = (projectName) => {
 };
 
 export default function Sidebar() {
-  const { logout } = useAuthStore();
+  const { user, logout } = useAuthStore(); // <-- INJECTED user
   const { projects, fetchProjects, toggleAddProjectModal, deleteProject, loading } = useProjectStore();
   const navigate = useNavigate();
 
@@ -77,6 +77,34 @@ export default function Sidebar() {
             );
           })}
         </nav>
+
+        {/* --- INJECTED ADMIN SECTION (Conditionally Rendered) --- */}
+        {user?.role === 'ADMIN' && (
+          <>
+            <hr className="my-6 border-white/10" />
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                Admin Panel
+              </h3>
+            </div>
+            <nav className="flex flex-col gap-2">
+              <NavLink
+                to="/admin/users"
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
+                    isActive
+                      ? 'bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-white border border-purple-500/30 shadow-lg shadow-purple-500/10' // Style matches mainLinks
+                      : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent' // Style matches mainLinks
+                  }`
+                }
+              >
+                <Shield size={18} />
+                User Management
+              </NavLink>
+            </nav>
+          </>
+        )}
+        {/* --- END INJECTION --- */}
 
         <hr className="my-6 border-white/10" />
 

@@ -27,6 +27,19 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+const AdminRoute = ({ children }) => {
+    // This component assumes ProtectedRoute has already run
+    // It relies on the user object being loaded into the authStore
+    const { user } = useAuthStore(); 
+
+    if (user?.role !== 'ADMIN') {
+        // If user is not an admin, boot them back to the home page
+        return <Navigate to="/" replace />; 
+    }
+    
+    return children; // User is an admin, render the admin page
+};
+
 const AppLayout = ({ children }) => (
   <Layout>
     {children}

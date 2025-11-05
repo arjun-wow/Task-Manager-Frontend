@@ -24,7 +24,7 @@ const useAuthStore = create((set, get) => ({
   login: async (email, password) => {
     try {
         const res = await axios.post(`${API_BASE}/api/auth/login`, { email, password });
-        const { token, ...user } = res.data;
+        const { token, ...user } = res.data; // 'user' here now includes 'role' from the backend
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(user));
         set({ user, token });
@@ -42,7 +42,7 @@ const useAuthStore = create((set, get) => ({
   register: async (name, email, password) => {
      try {
         const res = await axios.post(`${API_BASE}/api/auth/register`, { name, email, password });
-        const { token, ...user } = res.data;
+        const { token, ...user } = res.data; // 'user' here now includes 'role' from the backend
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(user));
         set({ user, token });
@@ -74,7 +74,7 @@ const useAuthStore = create((set, get) => ({
           set({ token });
           api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-          const res = await api.get('/api/auth/me'); 
+          const res = await api.get('/api/auth/me'); // The '/me' endpoint now returns the 'role'
           const user = res.data;
 
           localStorage.setItem('user', JSON.stringify(user));
@@ -95,4 +95,3 @@ if (initialToken) {
 }
 
 export default useAuthStore;
-

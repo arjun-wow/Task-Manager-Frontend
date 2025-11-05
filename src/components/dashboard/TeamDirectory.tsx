@@ -5,9 +5,9 @@ import { useEffect } from 'react';
 export default function TeamDirectory() {
   const { team, fetchTeam } = useTeamStore();
 
-  useEffect(() => {
-    fetchTeam();
-  }, [fetchTeam]);
+  //useEffect(() => {
+    //fetchTeam();
+  //}, [fetchTeam]);
 
   return (
     <DashboardCard title="Team directory">
