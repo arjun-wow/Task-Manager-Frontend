@@ -1,7 +1,8 @@
+// src/components/AddTaskModal.jsx
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Loader2, FolderPlus, User } from "lucide-react";
+import { X, Loader2, FolderPlus } from "lucide-react";
 import useProjectStore from "../store/projectStore";
 import useTaskStore from "../store/taskStore";
 import useModalStore from "../store/modalStore";
@@ -11,9 +12,9 @@ import useAuthStore from "../store/authStore";
 
 const AddTaskModal = () => {
   const { projects, fetchProjects, loading: projectsLoading } = useProjectStore();
-  const { addTask, loading } = useTaskStore();
-  const { user } = useAuthStore();
+  const { addTask, loading: creatingTask } = useTaskStore();
   const { closeAddTaskModal } = useModalStore();
+  const { user } = useAuthStore();
 
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [teamMembers, setTeamMembers] = useState([]);
@@ -27,26 +28,28 @@ const AddTaskModal = () => {
     assigneeId: "",
   });
 
+  // Fetch projects on mount
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
 
+  // Fetch all users for assignee list (everyone can assign everyone)
   useEffect(() => {
-    if (user?.role === "ADMIN" || projects.length > 0) {
-      const loadUsers = async () => {
-        setLoadingUsers(true);
-        try {
-          const res = await api.get("/api/users/team");
-          setTeamMembers(res.data || []);
-        } catch {
-          setTeamMembers([]);
-        } finally {
-          setLoadingUsers(false);
-        }
-      };
-      loadUsers();
-    }
-  }, [user, projects]);
+    const loadUsers = async () => {
+      setLoadingUsers(true);
+      try {
+        const res = await api.get("/api/users"); // expects admin/public endpoint returning all users
+        setTeamMembers(res.data || []);
+      } catch (error) {
+        console.error("Failed to fetch users:", error);
+        setTeamMembers([]);
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+
+    loadUsers();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -55,16 +58,29 @@ const AddTaskModal = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.projectId) return alert("Select a project first");
+    if (!formData.projectId) return alert("Please select a project first");
+
     try {
       await addTask({
         ...formData,
         projectId: Number(formData.projectId),
         assigneeId: formData.assigneeId ? Number(formData.assigneeId) : null,
+        dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : null,
       });
+
       closeAddTaskModal();
+      // reset form if you want (optional)
+      setFormData({
+        title: "",
+        description: "",
+        projectId: "",
+        priority: "MEDIUM",
+        dueDate: "",
+        assigneeId: "",
+      });
     } catch (err) {
-      console.error("Create task failed", err);
+      console.error("Task creation failed:", err);
+      alert("Failed to create task.");
     }
   };
 
@@ -72,8 +88,8 @@ const AddTaskModal = () => {
     <AnimatePresence>
       <motion.div
         id="task-backdrop"
-        className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-[10000]"
         onClick={(e) => e.target.id === "task-backdrop" && closeAddTaskModal()}
+        className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-[10000]"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -97,16 +113,21 @@ const AddTaskModal = () => {
               <p>Loading projects...</p>
             </div>
           ) : projects.length === 0 ? (
-            <div className="text-center">
-              <h3 className="text-lg font-semibold mb-2">No Projects Found</h3>
-              <p className="text-sm mb-6">You must create a project first.</p>
+            <div className="text-center py-10">
+              <h3 className="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">
+                No Projects Found
+              </h3>
+              <p className="text-sm mb-6 text-gray-500 dark:text-gray-400">
+                You must create a project before adding tasks.
+              </p>
               <button
                 onClick={() => setShowProjectModal(true)}
-                className="px-5 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
+                className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg shadow-md hover:scale-[1.03] transition"
               >
                 <FolderPlus size={16} className="inline mr-2" />
                 Create Project
               </button>
+
               {showProjectModal && (
                 <AddProjectModal
                   isOpen={showProjectModal}
@@ -118,10 +139,12 @@ const AddTaskModal = () => {
               )}
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-3">
-                Add Task
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+                Add New Task
               </h2>
+
+              {/* Title */}
               <input
                 name="title"
                 value={formData.title}
@@ -130,6 +153,8 @@ const AddTaskModal = () => {
                 className="w-full px-4 py-2 border rounded-lg dark:bg-gray-900"
                 required
               />
+
+              {/* Description */}
               <textarea
                 name="description"
                 value={formData.description}
@@ -138,6 +163,8 @@ const AddTaskModal = () => {
                 placeholder="Description"
                 className="w-full px-4 py-2 border rounded-lg dark:bg-gray-900"
               />
+
+              {/* Project */}
               <select
                 name="projectId"
                 value={formData.projectId}
@@ -152,6 +179,8 @@ const AddTaskModal = () => {
                   </option>
                 ))}
               </select>
+
+              {/* Assignee */}
               <select
                 name="assigneeId"
                 value={formData.assigneeId}
@@ -159,18 +188,46 @@ const AddTaskModal = () => {
                 className="w-full px-4 py-2 border rounded-lg dark:bg-gray-900"
               >
                 <option value="">Unassigned</option>
-                {teamMembers.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name} ({m.role})
-                  </option>
-                ))}
+                {loadingUsers ? (
+                  <option disabled>Loading users...</option>
+                ) : (
+                  teamMembers.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name} ({m.role})
+                    </option>
+                  ))
+                )}
               </select>
+
+              {/* Priority & Due Date (added) */}
+              <div className="grid grid-cols-2 gap-3">
+                <select
+                  name="priority"
+                  value={formData.priority}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border rounded-lg dark:bg-gray-900"
+                >
+                  <option value="LOW">Low</option>
+                  <option value="MEDIUM">Medium</option>
+                  <option value="HIGH">High</option>
+                </select>
+
+                <input
+                  type="date"
+                  name="dueDate"
+                  value={formData.dueDate}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border rounded-lg dark:bg-gray-900"
+                />
+              </div>
+
+              {/* Submit */}
               <button
                 type="submit"
-                disabled={loading}
+                disabled={creatingTask}
                 className="w-full py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold"
               >
-                {loading ? <Loader2 className="animate-spin mx-auto" /> : "Add Task"}
+                {creatingTask ? <Loader2 className="animate-spin mx-auto" /> : "Add Task"}
               </button>
             </form>
           )}
