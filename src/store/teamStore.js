@@ -1,64 +1,52 @@
 import { create } from 'zustand';
 import api from './api';
 
-const useTeamStore = create((set, get) => ({ // <-- INJECTED 'get'
+const useTeamStore = create((set) => ({
   team: [],
   loading: false,
 
+  // ✅ Fetch all users (everyone can see everyone)
   fetchTeam: async () => {
     set({ loading: true });
     try {
-      const res = await api.get('/api/users'); // This is already the correct admin route
+      const res = await api.get('/api/users'); // single, consistent route
       set({ team: res.data, loading: false });
     } catch (err) {
-      console.error("Fetch team error", err.message);
-      set({ loading: false, team: [] }); // <-- MODIFIED: Set to empty array on error
+      console.error("Fetch team error:", err.message);
+      set({ loading: false, team: [] });
     }
   },
 
- 
-
-  
+  // ✅ Admin: update user role
   updateUserRole: async (userId, role) => {
-      try {
-          const res = await api.put(`/api/users/${userId}/role`, { role });
-          const updatedUser = res.data;
-          
-          // Update the user in the local 'team' state
-          set((state) => ({
-              team: state.team.map(user => 
-                  user.id === userId ? { ...user, ...updatedUser } : user // Ensure full user object is updated
-              )
-          }));
-          // Optionally show success toast here
-      } catch (err) {
-          console.error("Update user role error:", err);
-          // Throw error so the component can catch it
-          throw err; 
-      }
+    try {
+      const res = await api.put(`/api/users/${userId}/role`, { role });
+      const updatedUser = res.data;
+
+      // Update the local team array
+      set((state) => ({
+        team: state.team.map((user) =>
+          user.id === userId ? { ...user, ...updatedUser } : user
+        ),
+      }));
+    } catch (err) {
+      console.error("Update user role error:", err);
+      throw err;
+    }
   },
 
-  /**
-   * [ADMIN ONLY] Deletes a user.
-   */
+  // ✅ Admin: delete user
   deleteUser: async (userId) => {
-      try {
-          await api.delete(`/api/users/${userId}`);
-          
-          // Remove the user from the local 'team' state
-          set((state) => ({
-              team: state.team.filter(user => user.id !== userId)
-          }));
-          // Optionally show success toast here
-      } catch (err) {
-          console.error("Delete user error:", err);
-          // Throw error so the component can catch it
-          throw err; 
-      }
-  }
-  // --- END INJECTION ---
-
+    try {
+      await api.delete(`/api/users/${userId}`);
+      set((state) => ({
+        team: state.team.filter((user) => user.id !== userId),
+      }));
+    } catch (err) {
+      console.error("Delete user error:", err);
+      throw err;
+    }
+  },
 }));
 
 export default useTeamStore;
-
