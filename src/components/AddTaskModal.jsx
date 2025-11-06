@@ -1,240 +1,292 @@
-import { useState, useEffect } from "react";
-import useTaskStore from "../store/taskStore";
+import React, { useState, useEffect, useRef } from "react";
+import ReactDOM from "react-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, Loader2, FolderPlus, User } from "lucide-react";
 import useProjectStore from "../store/projectStore";
-import useTeamStore from "../store/teamStore";
-import { motion } from 'framer-motion';
-import { X, Calendar, User, Flag, Tag } from 'lucide-react';
+import useTaskStore from "../store/taskStore";
+import useModalStore from "../store/modalStore";
+import AddProjectModal from "./AddProjectModal";
 
-export default function AddTaskModal({ onClose, projectId: initialProjectId }) {
-  const { addTask } = useTaskStore();
-  const { projects, currentProject, fetchProjects } = useProjectStore();
-  const { team, fetchTeam } = useTeamStore();
+const AddTaskModal = () => {
+  const { projects, fetchProjects, loading: projectsLoading } = useProjectStore();
+  const { createTask, loading: creatingTask } = useTaskStore();
+  const { closeAddTaskModal } = useModalStore();
 
-  const [form, setForm] = useState({
-    title: '',
-    description: '',
-    priority: 'MEDIUM',
-    status: 'TO_DO',
-    dueDate: '',
-    assigneeId: '',
-    projectId: initialProjectId || ''
+  const [showProjectModal, setShowProjectModal] = useState(false);
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    projectId: "",
+    priority: "MEDIUM",
+    dueDate: "",
+    assigneeId: "",
   });
 
+  const dateRef = useRef(null);
+
+  // Fetch projects
   useEffect(() => {
-    fetchProjects();
-    fetchTeam();
-  }, [fetchProjects, fetchTeam]);
+    fetchProjects().catch(() => {});
+  }, [fetchProjects]);
 
+  // Preselect first project
   useEffect(() => {
-    if (!form.projectId && currentProject) {
-      setForm(prev => ({ ...prev, projectId: currentProject.id }));
-    } else if (!form.projectId && projects.length > 0) {
-      setForm(prev => ({ ...prev, projectId: projects[0].id }));
+    if (!formData.projectId && projects?.length > 0) {
+      setFormData((prev) => ({ ...prev, projectId: String(projects[0].id) }));
     }
-  }, [currentProject, projects, form.projectId]);
+  }, [projects]);
 
-  const submit = async (e) => {
-    e.preventDefault();
-    if (!form.title.trim()) return alert('Task title is required');
-    if (!form.projectId) return alert('Please select a project');
-
-    try {
-      await addTask({
-        ...form,
-        dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
-        assigneeId: form.assigneeId ? Number(form.assigneeId) : null,
-        projectId: Number(form.projectId)
-      });
-      onClose();
-    } catch (error) {
-      console.error('Error adding task:', error);
-      alert('Failed to add task. Please try again.');
-    }
-  };
+  // Mock team member fetch — replace later with real API
+  useEffect(() => {
+    const loadUsers = async () => {
+      setLoadingUsers(true);
+      try {
+        // Simulate API call (replace this with your user API)
+        const users = [
+          { id: 1, name: "John Doe" },
+          { id: 2, name: "Sarah Lee" },
+          { id: 3, name: "Mark Patel" },
+        ];
+        setTeamMembers(users);
+      } catch {
+        setTeamMembers([]);
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+    loadUsers();
+  }, []);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const getProjectTeam = () => {
-    if (!form.projectId) return team;
-    const project = projects.find(p => p.id === Number(form.projectId));
-    return project?.team || team;
+  const handleClose = () => closeAddTaskModal();
+
+  const handleBackdropClick = (e) => {
+    if (e.target.id === "task-backdrop") handleClose();
   };
 
-  return (
-    <motion.div
-      className="fixed inset-0 bg-black/60 backdrop-blur-xl flex items-center justify-center z-50 p-4"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      onClick={onClose}
-    >
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.projectId) return alert("Select a project first");
+
+    try {
+      await createTask({
+        ...formData,
+        projectId: Number(formData.projectId),
+        assigneeId: formData.assigneeId ? Number(formData.assigneeId) : null,
+        dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : null,
+      });
+      handleClose();
+    } catch (err) {
+      console.error("Task creation error:", err);
+      alert("Failed to create task. Try again.");
+    }
+  };
+
+  const modalContent = (
+    <AnimatePresence>
       <motion.div
-        className="bg-gradient-to-br from-gray-900/80 via-gray-800/70 to-purple-900/60 dark:from-gray-900/90 dark:to-purple-800/70 rounded-2xl p-8 w-full max-w-lg shadow-2xl border border-white/10 relative overflow-hidden"
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 30 }}
-        transition={{ duration: 0.25 }}
-        onClick={(e) => e.stopPropagation()}
+        id="task-backdrop"
+        onClick={handleBackdropClick}
+        className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-[10000]"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
       >
-        {}
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-400/5 to-transparent pointer-events-none rounded-2xl" />
-
-        {/*Header*/} 
-        <div className="flex items-center justify-between mb-6 relative z-10">
-          <h3 className="text-2xl font-semibold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-            Add New Task
-          </h3>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        {/*Form*/}
-        <form onSubmit={submit} className="space-y-5 relative z-10">
-          {/* Project */}
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
-              <Tag size={16} />
-              Project
-            </label>
-            <select
-              name="projectId"
-              value={form.projectId}
-              onChange={handleChange}
-              className="w-full px-4 py-2.5 bg-white/5 text-gray-100 border border-white/10 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-              required
-            >
-              <option value="">Select a project</option>
-              {projects.map(project => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Title */}
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Task Title *
-            </label>
-            <input
-              name="title"
-              value={form.title}
-              onChange={handleChange}
-              placeholder="What needs to be done?"
-              className="w-full px-4 py-2.5 bg-white/5 text-gray-100 border border-white/10 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-500 transition-all"
-              required
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Description
-            </label>
-            <textarea
-              name="description"
-              value={form.description}
-              onChange={handleChange}
-              placeholder="Add details about this task..."
-              rows={3}
-              className="w-full px-4 py-2.5 bg-white/5 text-gray-100 border border-white/10 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-500 transition-all"
-            />
-          </div>
-
-          {/* Grid */}
-          <div className="grid grid-cols-2 gap-4">
-            {/* Assignee */}
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
-                <User size={16} /> Assign To
-              </label>
-              <select
-                name="assigneeId"
-                value={form.assigneeId}
-                onChange={handleChange}
-                className="w-full px-4 py-2.5 bg-white/5 text-gray-100 border border-white/10 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-              >
-                <option value="">Unassigned</option>
-                {getProjectTeam().map(user => (
-                  <option key={user.id} value={user.id}>
-                    {user.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Status */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Status</label>
-              <select
-                name="status"
-                value={form.status}
-                onChange={handleChange}
-                className="w-full px-4 py-2.5 bg-white/5 text-gray-100 border border-white/10 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-              >
-                <option value="TO_DO">To Do</option>
-                <option value="IN_PROGRESS">In Progress</option>
-                <option value="DONE">Done</option>
-              </select>
-            </div>
-
-            {/* Priority */}
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
-                <Flag size={16} /> Priority
-              </label>
-              <select
-                name="priority"
-                value={form.priority}
-                onChange={handleChange}
-                className="w-full px-4 py-2.5 bg-white/5 text-gray-100 border border-white/10 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-              >
-                <option value="LOW">Low</option>
-                <option value="MEDIUM">Medium</option>
-                <option value="HIGH">High</option>
-              </select>
-            </div>
-
-            {/* Due Date */}
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
-                <Calendar size={16} /> Due Date
-              </label>
-              <input
-                type="datetime-local"
-                name="dueDate"
-                value={form.dueDate}
-                onChange={handleChange}
-                className="w-full px-4 py-2.5 bg-white/5 text-gray-100 border border-white/10 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-              />
-            </div>
-          </div>
-
-          {/* Buttons */}
-          <div className="flex justify-end gap-3 pt-5">
+        <motion.div
+          className="relative bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 p-8 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-2xl w-[90%] max-w-lg"
+          initial={{ y: 30, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 20, opacity: 0 }}
+          transition={{ duration: 0.25 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
+              Add New Task
+            </h2>
             <button
-              type="button"
-              onClick={onClose}
-              className="px-5 py-2.5 rounded-lg border border-white/10 text-gray-300 hover:bg-white/10 transition-all font-medium"
+              onClick={handleClose}
+              className="p-2 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
             >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
-            >
-              Add Task
+              <X size={22} />
             </button>
           </div>
-        </form>
+
+          {/* If no projects exist */}
+          {projects && projects.length === 0 ? (
+            <div className="text-center py-10">
+              <h3 className="text-xl font-medium text-gray-800 dark:text-gray-200 mb-2">
+                You don’t have any projects yet
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-6">
+                Tasks must belong to a project. Create one to start adding tasks.
+              </p>
+              <div className="flex justify-center gap-3">
+                <button
+                  onClick={() => setShowProjectModal(true)}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl shadow hover:scale-[1.03] transition"
+                >
+                  <FolderPlus size={16} /> Create Project
+                </button>
+                <button
+                  onClick={handleClose}
+                  className="px-5 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                >
+                  Close
+                </button>
+              </div>
+              {showProjectModal && (
+                <AddProjectModal
+                  isOpen={showProjectModal}
+                  onClose={() => {
+                    setShowProjectModal(false);
+                    fetchProjects();
+                  }}
+                />
+              )}
+            </div>
+          ) : projectsLoading ? (
+            <div className="text-center py-12">
+              <Loader2 className="animate-spin mx-auto mb-3 text-gray-500" />
+              <p className="text-gray-600 dark:text-gray-300">Loading projects...</p>
+            </div>
+          ) : (
+            // ✅ Form content
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Title */}
+              <div>
+                <label className="block text-sm mb-1 text-gray-600 dark:text-gray-400">
+                  Title
+                </label>
+                <input
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="Enter task title"
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-sm mb-1 text-gray-600 dark:text-gray-400">
+                  Description
+                </label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  rows="3"
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="Enter task details"
+                />
+              </div>
+
+              {/* Project */}
+              <div>
+                <label className="block text-sm mb-1 text-gray-600 dark:text-gray-400">
+                  Project
+                </label>
+                <select
+                  name="projectId"
+                  value={formData.projectId}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
+                >
+                  <option value="">Select Project</option>
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Assignee */}
+              <div>
+                <label className="block text-sm mb-1 text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                  <User size={14} /> Assign To
+                </label>
+                {loadingUsers ? (
+                  <div className="text-gray-500 text-sm py-1">Loading team...</div>
+                ) : (
+                  <select
+                    name="assigneeId"
+                    value={formData.assigneeId}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    <option value="">Unassigned</option>
+                    {teamMembers.map((member) => (
+                      <option key={member.id} value={member.id}>
+                        {member.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              {/* Priority & Due Date */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm mb-1 text-gray-600 dark:text-gray-400">
+                    Priority
+                  </label>
+                  <select
+                    name="priority"
+                    value={formData.priority}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    <option value="LOW">Low</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="HIGH">High</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm mb-1 text-gray-600 dark:text-gray-400">
+                    Due Date
+                  </label>
+                  <input
+                    ref={dateRef}
+                    type="date"
+                    name="dueDate"
+                    value={formData.dueDate}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, dueDate: e.target.value }))
+                    }
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={creatingTask}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold hover:brightness-95 transition"
+              >
+                {creatingTask ? <Loader2 className="animate-spin" /> : "Add Task"}
+              </button>
+            </form>
+          )}
+        </motion.div>
       </motion.div>
-    </motion.div>
+    </AnimatePresence>
   );
-}
+
+  return ReactDOM.createPortal(modalContent, document.body);
+};
+
+export default AddTaskModal;

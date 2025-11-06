@@ -39,3 +39,18 @@ body.dark {
   background: rgba(17, 24, 39, 0.6); /* dark:bg-gray-900 */
   border: 1px solid rgba(55, 65, 81, 0.6); /* dark:border-gray-700 */
 }
+
+
+#task-backdrop {
+  z-index: 99999 !important;
+}
+#task-backdrop,
+#project-backdrop {
+  z-index: 999999 !important;
+  position: fixed !important;
+  pointer-events: all !important;
+}
+
+body *:not(#task-backdrop):not(#task-backdrop *) {
+  pointer-events: auto !important;
+}
