@@ -16,11 +16,9 @@ const useTeamStore = create((set, get) => ({ // <-- INJECTED 'get'
     }
   },
 
-  // --- INJECTED NEW FUNCTIONS ---
+ 
 
-  /**
-   * [ADMIN ONLY] Updates a user's role.
-   */
+  
   updateUserRole: async (userId, role) => {
       try {
           const res = await api.put(`/api/users/${userId}/role`, { role });

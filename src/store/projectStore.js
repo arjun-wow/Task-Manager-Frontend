@@ -1,11 +1,13 @@
 import { create } from 'zustand';
 import api from './api';
+import useAuthStore from './authStore';
 
 const useProjectStore = create((set, get) => ({
   projects: [],
   currentProject: null,
   isAddingProject: false,
   loading: false,
+  creating: false,
 
   toggleAddProjectModal: (isOpen) => set({ isAddingProject: isOpen }),
 
@@ -15,12 +17,9 @@ const useProjectStore = create((set, get) => ({
       const res = await api.get('/api/projects');
       const sortedProjects = (res?.data || []).sort((a, b) => a.name.localeCompare(b.name));
       set({ projects: sortedProjects, loading: false });
-
-      if (sortedProjects.length > 0 && !get().currentProject) {
+      if (sortedProjects.length > 0 && !get().currentProject)
         set({ currentProject: sortedProjects[0] });
-      } else if (sortedProjects.length === 0) {
-        set({ currentProject: null });
-      }
+      else if (sortedProjects.length === 0) set({ currentProject: null });
       return sortedProjects;
     } catch (err) {
       console.error('Fetch projects error:', err);
@@ -31,48 +30,45 @@ const useProjectStore = create((set, get) => ({
 
   setCurrentProject: (project) => set({ currentProject: project }),
 
-  createProject: async (name, description) => {
-    if (!name || name.trim() === '') {
-      console.error("Project name cannot be empty");
-      throw new Error("Project name cannot be empty");
-    }
-    try {
-      const res = await api.post('/api/projects', { name: name.trim(), description });
-      const newProject = res.data;
+  createProject: async (name, description, pmoId = null) => {
+    if (!name || name.trim() === '') throw new Error("Project name cannot be empty");
+    if (get().creating) return;
 
+    set({ creating: true });
+    try {
+      const res = await api.post('/api/projects', { name: name.trim(), description, pmoId });
+      const newProject = res.data;
       set((state) => ({
         projects: [...state.projects, newProject].sort((a, b) => a.name.localeCompare(b.name)),
+        currentProject: newProject,
       }));
-
-      set({ isAddingProject: false, currentProject: newProject });
+      set({ isAddingProject: false });
       return newProject;
     } catch (err) {
-      console.error('Create project error:', err);
+      if (err.response?.status === 409)
+        alert('A project with this name already exists.');
+      else console.error('Create project error:', err);
       throw err;
+    } finally {
+      set({ creating: false });
     }
   },
 
   deleteProject: async (projectId) => {
-    if (!projectId) {
-      console.error("Delete project called with invalid ID");
-      throw new Error("Invalid Project ID");
-    }
+    if (!projectId) throw new Error("Invalid Project ID");
     try {
-      const response = await api.delete(`/api/projects/${projectId}`);
+      await api.delete(`/api/projects/${projectId}`);
       set((state) => ({
         projects: state.projects.filter((p) => p.id !== projectId),
       }));
-
       if (get().currentProject?.id === projectId) {
-        const remainingProjects = get().projects;
-        set({ currentProject: remainingProjects.length > 0 ? remainingProjects[0] : null });
+        const remaining = get().projects;
+        set({ currentProject: remaining.length > 0 ? remaining[0] : null });
       }
-
-      console.log(response.data?.message || "Project deleted");
     } catch (err) {
       console.error('Delete project error:', err);
-      const errorMessage = err?.response?.data?.message || 'Failed to delete project. Please try again.';
-      alert(errorMessage);
+      const msg = err?.response?.data?.message || 'Failed to delete project.';
+      alert(msg);
       throw err;
     }
   },
