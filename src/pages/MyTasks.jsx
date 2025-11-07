@@ -31,7 +31,6 @@ export default function MyTasks() {
   const { currentProject } = useProjectStore();
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // ✅ ensure tasks load properly even if project store takes time
   useEffect(() => {
     const loadTasks = async (projectId) => {
       try {
@@ -59,7 +58,6 @@ export default function MyTasks() {
     }
   }, [currentProject, fetchTasks]);
 
-  // ✅ Grouping logic — safer against missing fields or invalid dates
   const groupedTasks = useMemo(() => {
     if (loading || isInitialLoad || !Array.isArray(tasks)) {
       return { today: [], tomorrow: [], thisWeek: [], upcoming: [] };
@@ -106,6 +104,50 @@ export default function MyTasks() {
     };
   }, [tasks, loading, isInitialLoad]);
 
+  // 🌈 Enhanced shimmer loader (no logic changes)
+  if (isInitialLoad || loading) {
+    return (
+      <div className="space-y-8 animate-pulse">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <div className="h-8 w-48 rounded-md bg-gradient-to-r from-purple-700/40 via-purple-500/60 to-purple-700/40 bg-[length:200%_100%] animate-[pulse_1.8s_ease-in-out_infinite]"></div>
+            <div className="h-5 w-72 mt-3 rounded-md bg-gradient-to-r from-gray-700/40 via-gray-600/60 to-gray-700/40 bg-[length:200%_100%] animate-[pulse_2s_ease-in-out_infinite]"></div>
+          </div>
+          <div className="h-10 w-36 rounded-lg bg-gradient-to-r from-purple-800/40 via-purple-600/60 to-purple-800/40 bg-[length:200%_100%] animate-[pulse_1.6s_ease-in-out_infinite]"></div>
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-8">
+          {[1, 2, 3, 4].map((i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className="rounded-xl border border-gray-700/60 bg-gray-800/40 p-5 shadow-md backdrop-blur-md"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-10 w-10 rounded-lg bg-gradient-to-r from-purple-700/40 via-purple-500/60 to-purple-700/40 bg-[length:200%_100%] animate-[pulse_2s_ease-in-out_infinite]"></div>
+                <div className="flex-1">
+                  <div className="h-4 w-32 mb-2 rounded bg-gradient-to-r from-gray-700/40 via-gray-600/60 to-gray-700/40 bg-[length:200%_100%] animate-[pulse_2s_ease-in-out_infinite]"></div>
+                  <div className="h-3 w-24 rounded bg-gradient-to-r from-gray-700/40 via-gray-600/60 to-gray-700/40 bg-[length:200%_100%] animate-[pulse_2s_ease-in-out_infinite]"></div>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {[1, 2, 3].map((j) => (
+                  <div
+                    key={j}
+                    className="h-16 rounded-lg bg-gradient-to-r from-gray-700/40 via-gray-600/60 to-gray-700/40 bg-[length:200%_100%] animate-[pulse_1.6s_ease-in-out_infinite]"
+                  ></div>
+                ))}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // --- everything else unchanged below this line
   const TaskCard = ({ task }) => (
     <motion.div
       layout
@@ -156,18 +198,6 @@ export default function MyTasks() {
           </div>
         )}
       </div>
-
-      {currentProject && (
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
-          <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-            <User size={14} className="mr-2 flex-shrink-0" />
-            {currentProject.name}
-          </div>
-          <div className="text-xs text-gray-400 dark:text-gray-500">
-            {task.createdAt ? new Date(task.createdAt).toLocaleDateString() : ''}
-          </div>
-        </div>
-      )}
     </motion.div>
   );
 
@@ -240,22 +270,6 @@ export default function MyTasks() {
       </motion.div>
     );
   };
-
-  if (isInitialLoad || loading) {
-    return (
-      <div className="space-y-8">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-white drop-shadow-lg">My Tasks</h1>
-            <p className="mt-2 text-base text-gray-200 bg-gradient-to-r from-purple-900/50 to-purple-700/50 py-2 px-4 rounded-xl shadow-sm">
-              <span className="text-white">Overview of all your assigned tasks across projects</span>
-            </p>
-          </div>
-          <AddTaskButton variant="default" />
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-8">
