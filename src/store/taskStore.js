@@ -21,6 +21,8 @@ const useTaskStore = create((set, get) => ({
       set({ error: err.message, loading: false, tasks: [] });
     }
   },
+ 
+
 
   addTask: async (payload) => {
     try {
@@ -87,5 +89,6 @@ const useTaskStore = create((set, get) => ({
     }
   },
 }));
+
 
 export default useTaskStore;

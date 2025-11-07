@@ -1,117 +1,194 @@
-import { useEffect } from 'react';
-import useTeamStore from '../store/teamStore'; // We can reuse teamStore to get all users
-import DashboardCard from '../components/dashboard/DashboardCard';
-import { Loader, Trash2, Shield } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { Users, Briefcase, ClipboardList, Trash2, ShieldCheck, ShieldOff, Loader2 } from "lucide-react";
+import api from "../store/api";
+import useAuthStore from "../store/authStore";
 
-export default function AdminUserPage() {
-  const { team, fetchTeam, loading, updateUserRole, deleteUser } = useTeamStore();
-  const authUser = useAuthStore((state) => state.user); // Get logged-in user to prevent self-delete
+export default function AdminDashboard() {
+  const { user } = useAuthStore();
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({ totalUsers: 0, totalProjects: 0, totalTasks: 0 });
 
+  // 🔸 Fetch users + stats
+  
   useEffect(() => {
-    fetchTeam(); // Calls GET /api/users
-  }, [fetchTeam]);
+    const fetchAdminData = async () => {
+      try {
+        const [userRes, statsRes] = await Promise.all([
+          api.get("/api/users"),
+          api.get("/api/admin/stats").catch(() => ({ data: { totalUsers: 0, totalProjects: 0, totalTasks: 0 } }))
+        ]);
+        setUsers(userRes.data);
+        setStats(statsRes.data);
+      } catch (err) {
+        console.error("Admin fetch failed:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAdminData();
+  }, []);
 
-  const handleRoleChange = async (userId, newRole) => {
-    if (userId === authUser?.id) {
-        alert("You cannot change your own role.");
-        return;
-    }
-    if (!window.confirm(`Are you sure you want to change this user's role to ${newRole}?`)) {
-      return;
-    }
+  // 🔸 Update role
+  const toggleRole = async (id, currentRole) => {
+    const newRole = currentRole === "ADMIN" ? "USER" : "ADMIN";
+    if (!window.confirm(`Change this user's role to ${newRole}?`)) return;
+
     try {
-      await updateUserRole(userId, newRole);
-    } catch (error) {
-      console.error("Failed to update role:", error);
+      await api.put(`/api/users/${id}/role`, { role: newRole });
+      setUsers((prev) =>
+        prev.map((u) => (u.id === id ? { ...u, role: newRole } : u))
+      );
+    } catch (err) {
+      console.error("Failed to update role:", err);
+      alert("Failed to change user role.");
     }
   };
 
-  const handleDelete = async (userId, userName) => {
-     if (userId === authUser?.id) {
-        alert("You cannot delete your own account from the admin panel.");
-        return;
-    }
-    if (!window.confirm(`Are you sure you want to PERMANENTLY DELETE the user "${userName}"? This cannot be undone.`)) {
-      return;
-    }
+  // 🔸 Delete user
+  const deleteUser = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this user?")) return;
     try {
-      await deleteUser(userId);
-    } catch (error) {
-      console.error("Failed to delete user:", error);
+      await api.delete(`/api/users/${id}`);
+      setUsers((prev) => prev.filter((u) => u.id !== id));
+    } catch (err) {
+      console.error("Delete failed:", err);
+      alert("Failed to delete user.");
     }
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-black dark:text-white drop-shadow-lg">
-          User Management
-        </h1>
-        <p className="mt-1 text-base text-gray-600 dark:text-gray-300">
-          Manage all users in the system
+  // 🔸 Access check
+  if (user?.role !== "ADMIN") {
+    return (
+      <div className="flex items-center justify-center h-[80vh]">
+        <p className="text-gray-500 dark:text-gray-300 text-lg">
+          Access denied — Admins only.
         </p>
       </div>
+    );
+  }
 
-      <DashboardCard>
-        {loading ? (
-          <div className="flex justify-center items-center p-10"><Loader className="animate-spin text-white"/></div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-white/10 dark:divide-gray-700/50">
-              <thead className="bg-black/5 dark:bg-white/5">
-                <tr>
-                  <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-black dark:text-white sm:pl-6">Name</th>
-                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-black dark:text-white">Email</th>
-                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-black dark:text-white">Role</th>
-                  <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6"><span className="sr-only">Actions</span></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5 dark:divide-gray-800/50">
-                {team.map((user) => (
-                  <tr key={user.id} className="hover:bg-black/5 dark:hover:bg-white/5">
-                    <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
-                      <div className="flex items-center">
-                        <div className="h-10 w-10 flex-shrink-0">
-                          <img className="h-10 w-10 rounded-full object-cover" src={user.avatarUrl || `https://api.dicebear.com/8.x/bottts-neutral/svg?seed=${user.id}`} alt="" />
-                        </div>
-                        <div className="ml-4">
-                          <div className="font-medium text-black dark:text-white">{user.name || 'Unnamed User'}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-600 dark:text-gray-400">{user.email}</td>
-                    <td className="whitespace-nowrap px-3 py-4 text-sm">
-                      <select 
-                        value={user.role} 
-                        onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                        disabled={user.id === authUser?.id} // Disable changing own role
-                        className="px-3 py-1 border border-black/10 dark:border-white/10 bg-white/50 dark:bg-gray-800/50 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-blue-400 text-black dark:text-white text-sm disabled:opacity-50"
-                      >
-                        <option value="USER">USER</option>
-                        <option value="ADMIN">ADMIN</option>
-                      </select>
-                    </td>
-                    <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                      <button 
-                         onClick={() => handleDelete(user.id, user.name)}
-                         disabled={user.id === authUser?.id} // Disable deleting self
-                         className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 disabled:opacity-30 disabled:cursor-not-allowed"
-                         title="Delete User"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+  // 🔸 Loading shimmer
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-[80vh]">
+        <Loader2 className="animate-spin text-purple-500" size={36} />
+      </div>
+    );
+  }
+
+  // 🔸 Admin dashboard layout
+  return (
+    <div className="p-6 space-y-8">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-white-900 dark:text-white">Admin Dashboard</h1>
+          <p className="text-gray-500 dark:text-white-400">Manage users, roles, and overview system data</p>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="p-4 rounded-xl bg-gradient-to-br from-purple-800/60 to-purple-500/40 border border-purple-600/30 shadow-md">
+          <div className="flex items-center gap-3">
+            <Users size={28} className="text-purple-300" />
+            <div>
+              <h4 className="text-sm text-gray-300">Total Users</h4>
+              <p className="text-2xl font-semibold text-white">{stats.totalUsers}</p>
+            </div>
           </div>
-        )}
-      </DashboardCard>
+        </div>
+
+        <div className="p-4 rounded-xl bg-gradient-to-br from-blue-800/60 to-blue-500/40 border border-blue-600/30 shadow-md">
+          <div className="flex items-center gap-3">
+            <Briefcase size={28} className="text-blue-300" />
+            <div>
+              <h4 className="text-sm text-gray-300">Projects</h4>
+              <p className="text-2xl font-semibold text-white">{stats.totalProjects}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4 rounded-xl bg-gradient-to-br from-green-800/60 to-green-500/40 border border-green-600/30 shadow-md">
+          <div className="flex items-center gap-3">
+            <ClipboardList size={28} className="text-green-300" />
+            <div>
+              <h4 className="text-sm text-gray-300">Tasks</h4>
+              <p className="text-2xl font-semibold text-white">{stats.totalTasks}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Users Table */}
+      <div className="bg-white/80 dark:bg-gray-900/80 rounded-xl border border-gray-200 dark:border-gray-700 shadow-md overflow-hidden backdrop-blur-md">
+        <div className="p-4 border-b dark:border-gray-700 flex justify-between items-center">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">User Management</h2>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{users.length} users</span>
+        </div>
+
+        <table className="w-full text-sm text-left text-gray-700 dark:text-gray-300">
+          <thead className="bg-gray-100/70 dark:bg-gray-800/70">
+            <tr>
+              <th className="px-4 py-3">ID</th>
+              <th className="px-4 py-3">Name</th>
+              <th className="px-4 py-3">Email</th>
+              <th className="px-4 py-3">Role</th>
+              <th className="px-4 py-3 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map((u) => (
+              <tr
+                key={u.id}
+                className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50/50 dark:hover:bg-gray-800/40 transition"
+              >
+                <td className="px-4 py-2">{u.id}</td>
+                <td className="px-4 py-2 flex items-center gap-2">
+                  <img
+                    src={u.avatarUrl || "https://i.pravatar.cc/40"}
+                    alt={u.name}
+                    className="w-8 h-8 rounded-full border border-gray-500/20"
+                  />
+                  {u.name}
+                </td>
+                <td className="px-4 py-2">{u.email}</td>
+                <td className="px-4 py-2">
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                      u.role === "ADMIN"
+                        ? "bg-purple-500/20 text-purple-400 border border-purple-400/30"
+                        : "bg-gray-500/20 text-gray-400 border border-gray-400/30"
+                    }`}
+                  >
+                    {u.role}
+                  </span>
+                </td>
+                <td className="px-4 py-2 text-right flex justify-end gap-2">
+                  <button
+                    onClick={() => toggleRole(u.id, u.role)}
+                    className="p-2 rounded-lg hover:bg-purple-600/30 transition"
+                    title="Toggle Role"
+                  >
+                    {u.role === "ADMIN" ? (
+                      <ShieldOff size={16} className="text-gray-400" />
+                    ) : (
+                      <ShieldCheck size={16} className="text-purple-400" />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => deleteUser(u.id)}
+                    className="p-2 rounded-lg hover:bg-red-600/30 transition"
+                    title="Delete User"
+                  >
+                    <Trash2 size={16} className="text-red-400" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
-
-// Need to import useAuthStore here as well
-import useAuthStore from '../store/authStore';
