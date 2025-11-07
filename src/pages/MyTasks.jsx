@@ -6,6 +6,8 @@ import { Calendar, Clock, Flag, User, CheckCircle, PlayCircle, Circle } from 'lu
 import AddTaskButton from '../components/AddTaskButton';
 import { motion, AnimatePresence } from 'framer-motion';
 
+
+
 // Priority colors
 const priorityColors = {
   HIGH: 'bg-red-500/10 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800',
@@ -178,7 +180,7 @@ export default function MyTasks() {
         )}
       </div>
 
-      <div className="flex items-center justify-between mt-4">
+      <div className="flex items-center justify-between mt-4"  >
         <div className="flex items-center gap-2 flex-wrap">
           <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[task.status] || statusColors.TO_DO}`}>
             {statusIcons[task.status] || statusIcons.TO_DO}
@@ -189,6 +191,10 @@ export default function MyTasks() {
             <Flag size={12} className="inline mr-1" />
             {task.priority || 'LOW'}
           </span>
+
+
+
+
         </div>
 
         {task.dueDate && (

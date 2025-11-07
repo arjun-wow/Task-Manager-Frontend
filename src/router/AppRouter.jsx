@@ -20,6 +20,9 @@ const ProjectOverview = lazy(() => import("../pages/ProjectOverview"));
 const ResetPasswordPage = lazy(() => import("../pages/ResetPasswordPage"));
 const AuthCallback = lazy(() => import("../pages/AuthCallback"));
 const Reports = lazy(() => import("../pages/Reports"));
+const AdminUserPage = lazy(() => import("../pages/AdminUserPage"));
+
+
 
 const ProtectedRoute = ({ children }) => {
   const { token } = useAuthStore();
@@ -75,6 +78,9 @@ export default function AppRouter() {
                     <Route path="/projects/:projectId/overview" element={<ProjectOverview />} />
                     <Route path="/projects/:projectId/kanban" element={<ProjectKanban />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
+                    <Route path="/admin/users" element={<AdminUserPage />} />
+
+
                   </Routes>
                 </Suspense>
               </AppLayout>
