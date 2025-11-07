@@ -1,5 +1,7 @@
 import { Bell, Search } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
+import NotificationBell from "../NotificationBell";
+
 
 export default function Navbar(){
   const { user } = useAuthStore();
@@ -16,8 +18,7 @@ export default function Navbar(){
       </div>
       <div className="flex items-center gap-4">
         <div className="relative">
-          <Bell className="text-gray-300 hover:text-white cursor-pointer transition-colors"/>
-          <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></div>
+           <NotificationBell />
         </div>
         <img 
           src={user?.avatarUrl || 'https://i.pravatar.cc/40'} 

@@ -6,13 +6,12 @@ import { Loader2, ShieldCheck, Trash2 } from "lucide-react";
 
 export default function Team() {
   const { team, fetchTeam, loading, updateUserRole, deleteUser } = useTeamStore();
-  const { user } = useAuthStore(); // ✅ Get current logged-in user
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === "ADMIN";
 
   useEffect(() => {
     fetchTeam();
   }, [fetchTeam]);
-
-  const isAdmin = user?.role === "ADMIN";
 
   const handleRoleChange = async (id, newRole) => {
     if (!isAdmin) return;
@@ -40,7 +39,7 @@ export default function Team() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-white drop-shadow-lg">
+        <h1 className="text-3xl font-bold tracking-tight text-white drop-shadow">
           Team Directory
         </h1>
         <p className="mt-1 text-base text-gray-300">
@@ -60,31 +59,33 @@ export default function Team() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {team.map((member) => (
-            <DashboardCard
+            <div
               key={member.id}
-              className="p-6 flex flex-col items-center text-center bg-gradient-to-b from-gray-900/80 to-gray-800/60 border border-gray-700 shadow-lg rounded-2xl"
+              className="p-6 flex flex-col items-center text-center 
+                         rounded-2xl shadow-md border border-gray-200/60
+                         bg-gradient-to-br from-white/80 to-gray-100/60
+                         backdrop-blur-xl hover:shadow-lg transition-all"
             >
               <img
                 src={member.avatarUrl || `https://i.pravatar.cc/150?u=${member.id}`}
                 alt={member.name || "User"}
-                className="w-20 h-20 rounded-full border-4 border-white/10 mb-4 shadow-md"
+                className="w-20 h-20 rounded-full border-4 border-white/70 shadow-md mb-4"
               />
-              <h2 className="font-semibold text-lg text-white">{member.name || "Unnamed User"}</h2>
-              <p className="text-sm text-gray-400">{member.email || "No email"}</p>
+              <h2 className="font-semibold text-lg text-gray-800">
+                {member.name || "Unnamed User"}
+              </h2>
+              <p className="text-sm text-gray-500">{member.email || "No email"}</p>
 
-              <div className="mt-2 flex items-center justify-center gap-2">
-                <span
-                  className={`text-xs px-2 py-1 rounded-full ${
-                    member.role === "ADMIN"
-                      ? "bg-purple-600/30 text-purple-300 border border-purple-500/30"
-                      : "bg-gray-700/40 text-gray-300 border border-gray-600/50"
-                  }`}
-                >
-                  {member.role}
-                </span>
-              </div>
+              <span
+                className={`mt-2 text-xs px-3 py-1 rounded-full ${
+                  member.role === "ADMIN"
+                    ? "bg-indigo-100 text-indigo-600 border border-indigo-200"
+                    : "bg-gray-100 text-gray-600 border border-gray-200"
+                }`}
+              >
+                {member.role}
+              </span>
 
-              {/* --- ADMIN CONTROLS --- */}
               {isAdmin && (
                 <div className="mt-4 flex gap-2">
                   <button
@@ -94,7 +95,8 @@ export default function Team() {
                         member.role === "ADMIN" ? "USER" : "ADMIN"
                       )
                     }
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs rounded-md bg-blue-600 hover:bg-blue-700 text-white transition"
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs rounded-md 
+                               bg-indigo-500 hover:bg-indigo-600 text-white transition"
                   >
                     <ShieldCheck size={14} />
                     {member.role === "ADMIN" ? "Make User" : "Make Admin"}
@@ -102,14 +104,15 @@ export default function Team() {
 
                   <button
                     onClick={() => handleDelete(member.id)}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs rounded-md bg-red-600 hover:bg-red-700 text-white transition"
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs rounded-md 
+                               bg-rose-500 hover:bg-rose-600 text-white transition"
                   >
                     <Trash2 size={14} />
                     Delete
                   </button>
                 </div>
               )}
-            </DashboardCard>
+            </div>
           ))}
         </div>
       )}
