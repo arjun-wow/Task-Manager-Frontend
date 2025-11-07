@@ -64,11 +64,11 @@ export default function ProjectOverview() {
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
           {/* Changed header text to black (or white in dark mode) */}
-          <h1 className="text-3xl font-bold tracking-tight text-black dark:text-white drop-shadow-lg">
+          <h1 className="text-3xl font-bold tracking-tight text-white dark:text-white drop-shadow-lg">
             {project.name}
           </h1>
           {/* Changed subtitle color */}
-          <p className="mt-1 text-base text-gray-600 dark:text-gray-300">
+          <p className="mt-1 text-base text-white-600 dark:text-gray-300">
             Project Overview
           </p>
         </div>

@@ -54,7 +54,7 @@ export default function Settings() {
 
   return (
     <div className="transition-all duration-300 ease-in-out">
-      <h1 className="text-3xl font-bold text-black dark:text-white mb-6 transition-all duration-300">
+      <h1 className="text-3xl font-bold text-white dark:text-white mb-6 transition-all duration-300">
         Settings
       </h1>
 

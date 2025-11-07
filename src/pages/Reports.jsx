@@ -75,10 +75,10 @@ export default function ReportPage() {
         <div className="space-y-6">
             {/* Header */}
             <div>
-                 <h1 className="text-3xl font-bold tracking-tight text-black dark:text-white drop-shadow-lg">
+                 <h1 className="text-3xl font-bold tracking-tight white-black dark:text-white drop-shadow-lg">
                    Reports
                  </h1>
-                 <p className="mt-1 text-base text-gray-600 dark:text-gray-300">
+                 <p className="mt-1 text-base text-white-600 dark:text-gray-300">
                    Overview of workspace activity and performance
                  </p>
             </div>
